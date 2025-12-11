@@ -4,8 +4,14 @@ import vuetify, {transformAssetUrls} from 'vite-plugin-vuetify';
 
 export default defineNuxtConfig({
 
+    runtimeConfig: {
+        public: {
+            API_EXPRESS_URL: 'http://192.168.1.77:7000'
+        }
+    },
+
     devtools: {
-        enabled: true,
+        enabled: true
     },
 
     ssr: false,
@@ -92,6 +98,8 @@ export default defineNuxtConfig({
 
     // Modules: https://go.nuxtjs.dev/config-modules
     modules: [
+        '@nuxtjs/i18n',
+        'nuxt-zod-i18n',
         'nuxt-easy-lightbox',
         (_options, nuxt) => {
             nuxt.hooks.hook('vite:extendConfig', (config) => {
