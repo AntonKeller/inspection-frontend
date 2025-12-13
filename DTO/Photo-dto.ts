@@ -1,6 +1,6 @@
-import {PhotoBaseSchema, PhotoIdSchema} from "../Models/Photo-Model.js";
+import {PhotoBaseSchema, PhotoIdSchema} from "../Models/Photo-Model";
 import {z} from "zod";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
+import {DocumentModelSchema} from "../Models/Document-Model";
 
 
 export const PhotoCreateSchemaDTO = PhotoBaseSchema

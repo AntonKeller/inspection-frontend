@@ -13,64 +13,28 @@ export default function createAgreementsApi(instance: AxiosInstance) {
     return {
 
         fetchAll(): Promise<AxiosResponse<AgreementResponseDTO[]>> {
-            return api.get(`/all`)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка получения данных', e);
-                });
+            return api.get(`/all`);
         },
 
         fetchOne(id: string): Promise<AxiosResponse<AgreementResponseDTO>> {
-            return api.get(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка получения данных', e);
-                });
+            return api.get(`/one/${id}`);
         },
 
         create(data: AgreementCreateDTO): Promise<AxiosResponse<AgreementResponseDTO>> {
-            return api.post(`/create`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка добавления', e);
-                });
+            return api.post(`/create`, data);
         },
 
         update(id: string, data: AgreementUpdateDTO): Promise<AxiosResponse<AgreementResponseDTO>> {
-            return api.put(`/update/${id}`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка обновления', e);
-                });
+            return api.put(`/update/${id}`, data);
         },
 
 
         removeOne(id: string): Promise<AxiosResponse<AgreementResponseDTO>> {
-            return api.delete(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка получения данных', e);
-                });
+            return api.delete(`/one/${id}`);
         },
 
         removeMany(ids: string[]): Promise<AxiosResponse<AgreementResponseDTO[]>> {
-            return api.post(`/remove-many`, ids)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка получения данных', e);
-                });
+            return api.post(`/remove-many`, ids);
         },
     }
 }

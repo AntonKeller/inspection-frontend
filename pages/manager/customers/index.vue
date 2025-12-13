@@ -19,7 +19,7 @@
               size="small"
               rounded="md"
               border
-              @click="onAddCustomer"
+              @click="handleCreateCustomer"
           >
             Добавить заказчика
             <v-tooltip activator="parent" text="Добавить новую запись"/>
@@ -31,7 +31,7 @@
               size="small"
               rounded="md"
               border
-              :disabled="!selectedItems.length"
+              :disabled="!selected.length"
           >
             Операции
             <v-tooltip activator="parent" text="Операции с выделенными"/>
@@ -40,7 +40,7 @@
                 <v-list-item
                     append-icon="mdi-format-list-checks"
                     density="compact"
-                    @click="selectedItems=[]"
+                    @click="selected=[]"
                 >
                   <template #append>
                     <v-icon icon="mdi-format-list-checks" size="small"/>
@@ -69,7 +69,7 @@
                             size="small"
                             border="sm"
                             text="Ок"
-                            @click="onRemoveSomeCustomers"
+                            @click="handleRemoveCustomers"
                         />
                         <v-btn
                             density="comfortable"
@@ -87,7 +87,7 @@
           </v-btn>
           <div class="mx-1"></div>
           <v-btn
-              :loading="fetching"
+              :loading="loading"
               prepend-icon="mdi-update"
               variant="text"
               size="small"
@@ -100,28 +100,27 @@
           </v-btn>
           <v-spacer/>
           <v-progress-circular
-              v-if="searching"
+              v-if="loading"
               color="grey"
               size="25"
               indeterminate
           />
           <v-text-field
-              v-model="_searchText"
+              v-model="searchQuery"
               v-bind="mySearchFieldStyle"
               style="max-width: 350px"
-              @update:modelValue="updateSearch"
           />
         </div>
       </v-sheet>
 
       <v-data-table
-          v-model="selectedItems"
+          v-model="selected"
           v-model:items-per-page="itemsPerPage"
           :items-per-page-options="itemsPerPageOptions"
           :items-per-page="itemsPerPage"
-          :items="itemsMap"
-          :headers="headers"
-          :search="searchText"
+          :items="customersSearchFiltered"
+          :headers="customerTableHeaders"
+          :search="searchQuery"
           style="max-height: 500px"
           items-per-page-text="Кол-во на странице"
           loading-text="Загрузка данных..."
@@ -132,22 +131,23 @@
           item-value="_id"
           fixed-header
           show-select
-          @update:current-items="selectedItems = []"
+          @update:current-items="selected = []"
       >
-        <template #item.inn="{ item }">
-          {{ item?.inn ?? '-' }}
-        </template>
-        <template #item.phoneNumber="{ item }">
-          {{ item?.phoneNumber ?? '-' }}
-        </template>
         <template v-slot:item.actions="{ item }">
-          <my-change-button prompt="Редактировать ТЗ" @click.stop="onChangeCustomer(item._id)"/>
-          <my-button-table-remove :prompt="'Удалить'" @click:yes="onRemoveCustomer(item._id)" class="ml-2"/>
+          <my-change-button
+              prompt="Редактировать ТЗ"
+              @click.stop="navigateTo(`/manager/customers/${item._id}/change`)"
+          />
+          <my-button-table-remove
+              prompt="Удалить"
+              @click:yes="handleRemoveCustomer(item._id)"
+              class="ml-2"
+          />
         </template>
         <template #footer.prepend>
-          <div class="mr-auto text-grey-darken-1 pl-4 mt-2" v-if="selectedItems.length">
+          <div class="mr-auto text-grey-darken-1 pl-4 mt-2" v-if="selected.length">
             <v-icon icon="mdi-order-bool-ascending-variant" class="mr-1"/>
-            Выбрано элементов: {{ selectedItems.length }}
+            Выбрано элементов: {{ selected.length }}
           </div>
         </template>
       </v-data-table>
@@ -155,199 +155,130 @@
   </v-container>
 </template>
 
-<script>
-import {addCustomer, fetchCustomers, removeCustomer, removeSomeCustomers} from "@/utils/api/api_customers";
-import {myBtnPlus, mySearchFieldStyle, myTableSheetStyle} from "@/configs/styles";
+<script setup>
+import {mySearchFieldStyle} from "@/configs/styles";
 import {navigateTo} from "nuxt/app";
-import _ from "lodash";
+import customerTableHeaders from "@/constants/customer-table-headers";
+import useCustomersApi from "@/composables/use-customers-api";
+import {useStore} from "vuex";
+import {itemsPerPage, itemsPerPageOptions} from "@/constants/table-options";
 
-export default {
-  name: "customers-page",
 
-  data() {
-    return {
-      headers: [
-        {
-          align: 'start',
-          key: 'shortName',
-          value: 'shortName',
-          sortable: true,
-          title: 'Организация',
-        },
-        {
-          align: 'start',
-          key: 'inn',
-          value: 'inn',
-          sortable: true,
-          title: 'ИНН',
-          nowrap: true,
-        },
-        {
-          align: 'start',
-          key: 'representativeFullName',
-          value: 'representativeFullName',
-          sortable: true,
-          title: 'Представитель',
-        },
-        {
-          align: 'start',
-          key: 'phoneNumber',
-          sortable: true,
-          title: 'Номер представителя',
-          nowrap: true,
-        },
-        {
-          align: 'start',
-          key: 'email',
-          sortable: true,
-          title: 'Email',
-        },
-        {
-          align: 'end',
-          key: 'actions',
-          sortable: false,
-          width: 100,
-        },
-      ],
-      items: [],
-      selectedItems: [],
-      _searchText: '',
-      searchText: '',
-      fetching: false,
-      searching: false,
-      currentPage: 1,
-      itemsPerPage: 10,
-      itemsPerPageOptions: [
-        {value: 10, title: '10'},
-        {value: 25, title: '25'},
-        {value: 50, title: '50'},
-      ],
+const vuexStore = useStore();
+const customers = ref([]);
+const loading = ref(false);
+const selected = ref([]);
+const searchQuery = ref('');
+const {
+  fetchAll: fetchAllCustomers,
+  create: createCustomer,
+  removeOne: removeOneCustomer,
+  removeMany: removeManyCustomers
+} = useCustomersApi();
 
-      // IMPORT STYLES
-      mySearchFieldStyle,
-      myTableSheetStyle,
-      myBtnPlus,
-    }
-  },
 
-  beforeMount() {
-    this.fetchCustomers();
-  },
+onMounted(() => {
+  updateTable();
+});
 
-  watch: {
-    _searchText() {
-      this.searching = true;
-    }
-  },
 
-  computed: {
-    itemsMap() {
-      return this.itemsSearchFilter;
-    },
-    itemsSearchFilter() {
-      if (typeof this.searchText === 'string' && this.searchText.length > 0) {
-        return this.items.filter(e => {
-          return (new RegExp(this.searchText, 'ig')).test([
-            e?.fullName || null,
-            e?.shortName || null,
-            e?.inn || null,
-            e?.address || null
-          ].filter(e => !!e).join(' '));
-        })
-      } else {
-        return this.items;
-      }
-    }
-  },
+const customersSearchFiltered = computed(() => {
+  if (!searchQuery.value) return customers.value;
+  const searchRegex = new RegExp(customers.value, 'i');
+  return customers.value.filter(e => {
+    const join = [
+      e?.fullName,
+      e?.shortName,
+      e?.inn,
+      e?.ogrn,
+      e?.memberFullName,
+      e?.address
+    ].filter(e => !!e).join(' ');
+    return searchRegex.test(join);
+  })
+});
 
-  methods: {
 
-    updateTable() {
-      this.fetching = true;
-      const timeoutId = setTimeout(() => {
-        this.fetchCustomers();
-        this.fetching = false;
-        clearTimeout(timeoutId);
-      }, 500)
-    },
+function updateTable() {
+  loading.value = true;
+  return fetchAllCustomers()
+      .then(resp => {
+        customers.value = resp.data || [];
+      })
+      .catch(e => {
+        console.log('Ошибка запроса данных', e);
+        vuexStore.commit('alert/ERROR', 'Ошибка загрузки данных');
+      })
+      .finally(() => {
+        loading.value = false;
+        selected.value = [];
+      });
+}
 
-    updateSearch: _.debounce(function (search) {
-      this.searchText = search;
-      this.searching = false;
-    }, 900),
+function handleCreateCustomer() {
 
-    fetchCustomers() {
-      this.fetching = true;
-      fetchCustomers()
-          .then(response => {
-            this.items = response.data;
-          })
-          .catch(err => {
-            console.log('Ошибка загрузки списка заказчиков', err);
-            this.$store.commit('alert/ERROR', 'Ошибка загрузки списка заказчиков');
-          })
-          .finally(() => {
-            this.fetching = false;
-          });
-    },
-
-    onAddCustomer() {
-      const customer = {
-        _id: null,
-        shortName: null,
-        fullName: null,
-        inn: null,
-        address: null,
-        actualAddress: null,
-        email: null,
-        phoneNumber: null,
-        representativeFullName: null,
-        representativePosition: null,
-        template: null,
-      }
-
-      addCustomer(customer)
-          .then(() => {
-            this.$store.commit('alert/SUCCESS', 'Добавлен новый заказчик');
-            this.fetchCustomers();
-          })
-          .catch(err => {
-            console.log('Ошибка добавления заказчика', err);
-            this.$store.commit('alert/ERROR', 'Ошибка добавления');
-          })
-          .finally(() => {
-            this.loading = false;
-          })
-    },
-
-    onChangeCustomer(id) {
-      navigateTo(`/manager/customers/${id}/change`);
-    },
-
-    onRemoveSomeCustomers() {
-      if (!this.selectedItems || this.selectedItems.length === 0) return;
-      removeSomeCustomers(this.selectedItems)
-          .then(() => {
-            this.$store.commit('alert/SUCCESS', 'Записи удалены');
-            this.fetchCustomers();
-          })
-          .catch(err => {
-            console.log('Ошибка удаления записей', err);
-            this.$store.commit('alert/SUCCESS', 'Ошибка удаления записей');
-          })
-    },
-
-    onRemoveCustomer(id) {
-      removeCustomer(id)
-          .then(() => {
-            this.$store.commit('alert/SUCCESS', 'Заказчик успешно удален');
-            this.fetchCustomers();
-          })
-          .catch((err) => {
-            this.$store.commit('alert/ERROR', 'Ошибка удаления заказчика');
-            console.log('Ошибка удаления заказчика', err);
-          })
-    }
+  const data = {
+    shortName: null,
+    fullName: null,
+    inn: null,
+    ogrn: null,
+    legalAddress: null,
+    physicalAddress: null,
+    email: null,
+    phoneNumber: null,
+    memberFullName: null,
+    memberPosition: null,
   }
+
+  loading.value = true;
+
+  return createCustomer(data)
+      .then(() => {
+        vuexStore.commit('alert/SUCCESS', 'Добавлен новый заказчик');
+        updateTable();
+      })
+      .catch(err => {
+        console.log('Ошибка добавления заказчика', err);
+        vuexStore.commit('alert/ERROR', 'Ошибка добавления');
+      })
+      .finally(() => {
+        loading.value = false;
+      });
+}
+
+function handleRemoveCustomer(id) {
+
+  loading.value = true;
+
+  return removeOneCustomer(id)
+      .then(() => {
+        vuexStore.commit('alert/SUCCESS', 'Заказчик успешно удален');
+        updateTable();
+      })
+      .catch((err) => {
+        vuexStore.commit('alert/ERROR', 'Ошибка удаления заказчика');
+        console.log('Ошибка удаления заказчика', err);
+      })
+      .finally(() => {
+        loading.value = false;
+      });
+}
+
+function handleRemoveCustomers() {
+
+  loading.value = true;
+
+  return removeManyCustomers(selected.value)
+      .then(() => {
+        vuexStore.commit('alert/SUCCESS', 'Записи удалены');
+        updateTable();
+      })
+      .catch(err => {
+        console.log('Ошибка удаления записей', err);
+        vuexStore.commit('alert/ERROR', 'Ошибка удаления записей');
+      })
+      .finally(() => {
+        loading.value = false;
+      });
 }
 </script>

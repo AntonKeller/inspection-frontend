@@ -1,5 +1,5 @@
-import {PledgeAgreementBaseSchema} from "../Models/PledgeAgreement-Model.js";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
+import {PledgeAgreementBaseSchema} from "../Models/PledgeAgreement-Model";
+import {DocumentModelSchema} from "../Models/Document-Model";
 import {z} from "zod";
 
 

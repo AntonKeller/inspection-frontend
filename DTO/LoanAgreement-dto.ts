@@ -1,5 +1,5 @@
-import {LoanAgreementBaseSchema} from "../Models/LoanAgreement-Model.js";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
+import {LoanAgreementBaseSchema} from "../Models/LoanAgreement-Model";
+import {DocumentModelSchema} from "../Models/Document-Model";
 import {z} from "zod";
 
 

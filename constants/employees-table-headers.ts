@@ -1,0 +1,71 @@
+import type {EmployerResponseDTO} from "@/DTO/Employer-dto";
+
+const employeesTableHeaders = [
+    {
+        title: '',
+        key: 'actions',
+        align: 'end',
+        minWidth: 100,
+        width: 100,
+        maxWidth: 100,
+        fixed: true,
+        sortable: false,
+        _$visible: true,
+    },
+    {
+        title: 'Фамилия',
+        key: 'surname',
+        value: 'surname',
+        align: 'start',
+        sortable: true,
+        nowrap: false,
+        _$visible: true,
+    },
+    {
+        title: 'Имя',
+        key: 'firstName',
+        value: 'firstName',
+        align: 'start',
+        sortable: true,
+        nowrap: false,
+        _$visible: true,
+    },
+    {
+        title: 'Отчетство',
+        key: 'lastName',
+        value: 'lastName',
+        align: 'start',
+        sortable: true,
+        nowrap: false,
+        _$visible: true,
+    },
+    {
+        title: 'Email',
+        align: 'start',
+        key: 'email',
+        value: (e: EmployerResponseDTO) => e?.email,
+        sortable: true,
+        nowrap: false,
+        _$visible: true,
+    },
+    {
+        title: 'Рабочий номер',
+        align: 'start',
+        key: 'phoneNumberWork',
+        value: (e: EmployerResponseDTO) => e?.phoneNumberWork,
+        sortable: true,
+        nowrap: false,
+        _$visible: true,
+    },
+    {
+        title: 'Личный номер',
+        align: 'start',
+        key: 'phoneNumber',
+        value: (e: EmployerResponseDTO) => e?.phoneNumber,
+        sortable: true,
+        nowrap: false,
+        _$visible: true,
+    },
+];
+
+export default employeesTableHeaders;

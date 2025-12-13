@@ -1,7 +1,8 @@
 <template>
   <v-btn
       v-bind="$attrs"
-      variant="tonal"
+      variant="elevated"
+      rounded="lg"
       color="blue-darken-4"
   />
 </template>

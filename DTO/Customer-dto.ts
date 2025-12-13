@@ -1,5 +1,5 @@
-import {CustomerBaseSchema} from "../Models/Customer-Model.js";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
+import {CustomerBaseSchema} from "../Models/Customer-Model";
+import {DocumentModelSchema} from "../Models/Document-Model";
 import {z} from "zod";
 
 

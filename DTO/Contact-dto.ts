@@ -1,5 +1,5 @@
-import {ContactBaseSchema} from "../Models/Contact-Model.js";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
+import {ContactBaseSchema} from "../Models/Contact-Model";
+import {DocumentModelSchema} from "../Models/Document-Model";
 import {z} from "zod";
 
 

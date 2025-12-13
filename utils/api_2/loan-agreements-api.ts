@@ -1,5 +1,5 @@
 import axios, {type AxiosInstance, type AxiosResponse} from "axios";
-import {LoanAgreementCreateDTO, LoanAgreementResponseDTO, LoanAgreementUpdateDTO} from "@/DTO/LoanAgreement-dto";
+import type {LoanAgreementCreateDTO, LoanAgreementResponseDTO, LoanAgreementUpdateDTO} from "@/DTO/LoanAgreement-dto";
 
 export default function createLoanAgreementsApi(instance: AxiosInstance) {
 
@@ -11,63 +11,27 @@ export default function createLoanAgreementsApi(instance: AxiosInstance) {
     return {
 
         fetchAll(): Promise<AxiosResponse<LoanAgreementResponseDTO[]>> {
-            return api.get(`/all`)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/all`);
         },
 
         fetchOne(id: string): Promise<AxiosResponse<LoanAgreementResponseDTO>> {
-            return api.get(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/one/${id}`);
         },
 
         create(data: LoanAgreementCreateDTO): Promise<AxiosResponse<LoanAgreementResponseDTO>> {
-            return api.post(`/create`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.post(`/create`, data);
         },
 
         update(id: string, data: LoanAgreementUpdateDTO): Promise<AxiosResponse<LoanAgreementResponseDTO>> {
-            return api.put(`/update${id}`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.put(`/update/${id}`, data);
         },
 
         removeOne(id: string): Promise<AxiosResponse<LoanAgreementResponseDTO>> {
-            return api.delete(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.delete(`/one/${id}`);
         },
 
         removeMany(ids: string): Promise<AxiosResponse<LoanAgreementResponseDTO[]>> {
-            return api.post('/remove-many', ids)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.post('/remove-many', ids);
         },
     }
 }

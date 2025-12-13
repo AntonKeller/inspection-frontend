@@ -1,5 +1,5 @@
-import {TemplateBaseSchema} from "../Models/Template-Model.js";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
+import {TemplateBaseSchema} from "../Models/Template-Model";
+import {DocumentModelSchema} from "../Models/Document-Model";
 import {z} from "zod";
 
 

@@ -14,7 +14,7 @@ export const PhotoBaseSchema = z.object({
 });
 
 export const PhotoIdSchema = z.object({
-    targetObjectAngleId: z.string().nullable(), // Принадлежность к ракурсу объекта
+    objectAngleId: z.string().nullable(), // Принадлежность к ракурсу объекта
 });
 
 export const PhotoModelSchema = PhotoBaseSchema

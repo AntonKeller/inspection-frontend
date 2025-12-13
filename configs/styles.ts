@@ -25,12 +25,12 @@ export const mySearchFieldStyle = {
 // Стили для кнопки навигации "Назад"
 export const navigateBackBtnStyle = {
     ['prepend-icon']: "mdi-arrow-left",
-    ['color']: "blue-accent-4",
-    ['density']: 'comfortable',
-    ['size']: 'small',
-    ['border']: false,
-    ['variant']: "tonal",
-    ['rounded']: "md"
+    color: "black",
+    density: 'comfortable',
+    size: 'small',
+    border: false,
+    variant: "outlined",
+    rounded: "md"
 }
 
 // Стили для поля ввода на формах

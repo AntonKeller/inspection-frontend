@@ -13,63 +13,27 @@ export default function createContactsApi(instance: AxiosInstance) {
     return {
 
         fetchAll(): Promise<AxiosResponse<ContactResponseDTO[]>> {
-            return api.get(`/all`)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/all`);
         },
 
         fetchOne(id: string): Promise<AxiosResponse<ContactResponseDTO>> {
-            return api.get(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/one/${id}`);
         },
 
         create(data: ContactCreateDTO): Promise<AxiosResponse<ContactResponseDTO>> {
-            return api.post(`/create`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.post(`/create`, data);
         },
 
         update(id: string, data: ContactUpdateDTO): Promise<AxiosResponse<ContactResponseDTO>> {
-            return api.put(`/update${id}`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.put(`/update/${id}`, data);
         },
 
         removeOne(id: string): Promise<AxiosResponse<ContactResponseDTO>> {
-            return api.delete(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.delete(`/one/${id}`);
         },
 
         removeMany(ids: string): Promise<AxiosResponse<ContactResponseDTO[]>> {
-            return api.post('/remove-many', ids)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.post('/remove-many', ids);
         },
     }
 }

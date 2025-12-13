@@ -1,6 +1,6 @@
 import {z} from "zod";
-import {RoleBaseSchema} from "../Models/Role-Model.js";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
+import {RoleBaseSchema} from "../Models/Role-Model";
+import {DocumentModelSchema} from "../Models/Document-Model";
 
 
 export const RoleCreateSchemaDTO = z.object({

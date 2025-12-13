@@ -1,5 +1,4 @@
-import axios, {type AxiosInstance} from "axios";
-import type {AxiosResponse} from "axios";
+import axios, {type AxiosInstance, type AxiosResponse} from "axios";
 import type {CustomerCreateDTO, CustomerResponseDTO, CustomerUpdateDTO} from "@/DTO/Customer-dto";
 
 
@@ -13,63 +12,27 @@ export default function createCustomersApi(instance: AxiosInstance) {
     return {
 
         fetchAll(): Promise<AxiosResponse<CustomerResponseDTO[]>> {
-            return api.get(`/all`)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/all`);
         },
 
         fetchOne(id: string): Promise<AxiosResponse<CustomerResponseDTO>> {
-            return api.get(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/one/${id}`);
         },
 
         create(data: CustomerCreateDTO): Promise<AxiosResponse<CustomerResponseDTO>> {
-            return api.post(`/create`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.post(`/create`, data);
         },
 
         update(id: string, data: CustomerUpdateDTO): Promise<AxiosResponse<CustomerResponseDTO>> {
-            return api.put(`/update${id}`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.put(`/update/${id}`, data);
         },
 
         removeOne(id: string): Promise<AxiosResponse<CustomerResponseDTO>> {
-            return api.delete(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.delete(`/one/${id}`);
         },
 
         removeMany(ids: string): Promise<AxiosResponse<CustomerResponseDTO[]>> {
-            return api.post('/remove-many', ids)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.post('/remove-many', ids);
         },
     }
 }

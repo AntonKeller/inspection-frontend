@@ -1,5 +1,5 @@
-import {type AxiosInstance} from "axios";
-import axios from "axios";
+import axios, {type AxiosInstance, type AxiosResponse} from "axios";
+import type {EmployerResponseDTO} from "@/DTO/Employer-dto";
 
 
 export default function createAuthApi(instance: AxiosInstance) {
@@ -10,15 +10,8 @@ export default function createAuthApi(instance: AxiosInstance) {
     });
 
     return {
-
-        login(login: string, password: string) {
-            return api.post(`/login`, {login, password})
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка авторизации', e);
-                });
+        login(login: string, password: string): Promise<AxiosResponse<{ user: EmployerResponseDTO }>> {
+            return api.post(`/login`, {login, password});
         },
     }
 }

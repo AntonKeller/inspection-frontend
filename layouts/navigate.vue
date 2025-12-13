@@ -141,7 +141,7 @@
       </template>
     </v-navigation-drawer>
 
-    <v-main class="bg-grey-lighten-5">
+    <v-main>
       <slot/>
     </v-main>
 

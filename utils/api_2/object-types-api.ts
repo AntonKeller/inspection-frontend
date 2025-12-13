@@ -12,73 +12,35 @@ export default function createObjectTypesApi(instance: AxiosInstance) {
     return {
 
         fetchAll(): Promise<AxiosResponse<ObjectTypeResponseDTO[]>> {
-            return api.get(`/all`)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/all`);
         },
 
         fetchAllByTemplate(id: string): Promise<AxiosResponse<ObjectTypeResponseDTO[]>> {
-            return api.get(`/all-by-template/${id}`)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/all-by-template/${id}`);
+        },
+
+        fetchMappedAllByTemplate(id: string): Promise<AxiosResponse<ObjectTypeResponseDTO[]>> {
+            return api.get(`/all-mapped-angles/${id}`);
         },
 
         fetchOne(id: string): Promise<AxiosResponse<ObjectTypeResponseDTO>> {
-            return api.get(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/one/${id}`);
         },
 
         create(data: ObjectTypeCreateDTO): Promise<AxiosResponse<ObjectTypeResponseDTO>> {
-            return api.post(`/create`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.post(`/create`, data);
         },
 
         update(id: string, data: ObjectTypeUpdateDTO): Promise<AxiosResponse<ObjectTypeResponseDTO>> {
-            return api.put(`/update${id}`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.put(`/update/${id}`, data);
         },
 
         removeOne(id: string): Promise<AxiosResponse<ObjectTypeResponseDTO>> {
-            return api.delete(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.delete(`/one/${id}`);
         },
 
         removeMany(ids: string): Promise<AxiosResponse<ObjectTypeResponseDTO[]>> {
-            return api.post('/remove-many', ids)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.post('/remove-many', ids);
         },
     }
 }

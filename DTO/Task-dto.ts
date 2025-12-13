@@ -1,9 +1,9 @@
-import {TaskBaseSchema, TaskRelationsSchema} from "../Models/Task-Model.js";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
-import {CustomerResponseSchemaDTO} from "./Customer-dto.js";
-import {LoanAgreementResponseSchemaDTO} from "./LoanAgreement-dto.js";
-import {PledgeAgreementResponseSchemaDTO} from "./PledgeAgreement-dto.js";
-import {AgreementResponseSchemaDTO} from "./Agreement-dto.js";
+import {TaskBaseSchema, TaskRelationsSchema} from "../Models/Task-Model";
+import {DocumentModelSchema} from "../Models/Document-Model";
+import {CustomerResponseSchemaDTO} from "./Customer-dto";
+import {LoanAgreementResponseSchemaDTO} from "./LoanAgreement-dto";
+import {PledgeAgreementResponseSchemaDTO} from "./PledgeAgreement-dto";
+import {AgreementResponseSchemaDTO} from "./Agreement-dto";
 import {z} from "zod";
 
 

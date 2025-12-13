@@ -13,63 +13,27 @@ export default function createAnglesApi(instance: AxiosInstance) {
     return {
 
         fetchAll(): Promise<AxiosResponse<AngleResponseDTO[]>> {
-            return api.get(`/all`)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/all`);
         },
 
         fetchAllByObjectType(id: string): Promise<AxiosResponse<AngleResponseDTO[]>> {
-            return api.get(`/all-by-object-type/${id}`)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.get(`/all-by-object-type/${id}`);
         },
 
         create(data: AngleCreateDTO): Promise<AxiosResponse<AngleResponseDTO>> {
-            return api.post(`/create`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.post(`/create`, data);
         },
 
         update(id: string, data: AngleUpdateDTO): Promise<AxiosResponse<AngleResponseDTO>> {
-            return api.put(`/update/${id}`, data)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+            return api.put(`/update/${id}`, data);
         },
 
-        deleteOne(id: string): Promise<AxiosResponse<AngleResponseDTO>> {
-            return api.delete(`/one/${id}`)
-                .then(r => {
-                    return r.data;
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+        removeOne(id: string): Promise<AxiosResponse<AngleResponseDTO>> {
+            return api.delete(`/one/${id}`);
         },
 
-        deleteMany(ids: string[]): Promise<AxiosResponse<AngleResponseDTO[]>> {
-            return api.post(`/remove-many`, ids)
-                .then(r => {
-                    return r.data || [];
-                })
-                .catch(e => {
-                    console.log('Ошибка', e);
-                });
+        removeMany(ids: string[]): Promise<AxiosResponse<AngleResponseDTO[]>> {
+            return api.post(`/remove-many`, ids);
         },
     }
 }

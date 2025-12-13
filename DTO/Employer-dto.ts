@@ -1,6 +1,6 @@
 import {z} from "zod";
-import {EmployerBaseSchema, EmployerCredentialsSchema, EmployerRelationsSchema} from "../Models/Employer-Model.js";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
+import {EmployerBaseSchema, EmployerCredentialsSchema, EmployerRelationsSchema} from "../Models/Employer-Model";
+import {DocumentModelSchema} from "../Models/Document-Model";
 import {RoleResponseSchemaDTO} from "./Role-dto.js";
 
 

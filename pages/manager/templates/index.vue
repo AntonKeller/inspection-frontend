@@ -3,10 +3,10 @@
     <v-sheet max-width="1280" class="bg-transparent">
 
       <v-sheet class="border-b bg-white pb-3">
-        <v-card-title class="">Шаблоны объектов осмотра</v-card-title>
+        <v-card-title class="">Шаблоны и Ракурсы</v-card-title>
         <v-card-subtitle class="d-flex align-center ga-2">
-          <v-icon icon="mdi-layers-triple-outline" size="small"/>
-          Редактируйте, создавайте шаблоны под требования заказчика
+          <v-icon icon="mdi-folder-table-outline" size="small"/>
+          Редактируйте, создавайте шаблоны, типы объектов и ракурсы под требования заказчика
         </v-card-subtitle>
       </v-sheet>
 
@@ -19,7 +19,7 @@
               size="small"
               rounded="md"
               border
-              @click="createNewTemplate"
+              @click="handleCreateTemplate"
           >
             Добавить шаблон
             <v-tooltip activator="parent" text="Добавить новую запись"/>
@@ -33,20 +33,28 @@
               size="small"
               rounded="md"
               border
-              :disabled="!selectedTemplates.length"
+              :disabled="!templatesSelected.length"
           >
             Операции
             <v-tooltip activator="parent" text="Операции с выделенными"/>
             <v-menu activator="parent" transition="scale-transition">
               <v-sheet rounded="md" class="mt-1" elevation="0" border>
-                <v-list-item append-icon="mdi-format-list-checks" density="compact" @click="selectedTemplates=[]">
+                <v-list-item
+                    append-icon="mdi-format-list-checks"
+                    density="compact"
+                    @click="templatesSelected=[]"
+                >
                   <template #append>
                     <v-icon icon="mdi-format-list-checks" size="small"/>
                   </template>
                   <v-list-item-title>Снять выделение</v-list-item-title>
                 </v-list-item>
                 <v-divider/>
-                <v-list-item append-icon="mdi-delete-sweep-outline" density="compact" @click="onRemoveSomeTemplates">
+                <v-list-item
+                    append-icon="mdi-delete-sweep-outline"
+                    density="compact"
+                    @click="handleRemoveManyTemplates"
+                >
                   <template #append>
                     <v-icon icon="mdi-delete-sweep-outline" size="small"/>
                   </template>
@@ -59,13 +67,13 @@
           <div class="mx-1"></div>
 
           <v-btn
-              :loading="fetching"
+              :loading="templatesLoading"
               prepend-icon="mdi-update"
               variant="text"
               size="small"
               rounded="md"
               border
-              @click="fetchTemplatesCollection"
+              @click="updateTemplatesTable"
           >
             Обновить
             <v-tooltip activator="parent" text="Обновить данные"/>
@@ -73,27 +81,22 @@
 
           <v-spacer/>
 
-          <v-progress-circular
-              v-if="searching"
-              color="grey"
-              size="25"
-              indeterminate
-          />
-
           <v-text-field
-              v-model="_search"
+              v-model="templatesSearchQuery"
               v-bind="mySearchFieldStyle"
               style="max-width: 350px"
           />
         </div>
       </v-sheet>
+
       <v-data-table
-          v-model="selectedTemplates"
-          v-model:items-per-page="templatesItemsPerPage"
-          :items-per-page-options="templatesItemsPerPageOptions"
-          :items-per-page="templatesItemsPerPage"
-          :items="templatesMap"
+          v-model="templatesSelected"
+          v-model:items-per-page="itemsPerPage"
+          :items-per-page-options="itemsPerPageOptions"
+          :items-per-page="itemsPerPage"
+          :items="templatesSearchFiltered"
           :headers="templatesTableHeaders"
+          :loading="templatesLoading"
           style="max-height: 500px"
           items-per-page-text="Кол-во на странице"
           loading-text="Загрузка данных..."
@@ -104,7 +107,7 @@
           item-value="_id"
           fixed-header
           show-select
-          @update:current-items="selectedTemplates = []"
+          @update:current-items="templatesSelected = []"
       >
         <template #item.actions="{ item }">
           <v-btn
@@ -112,7 +115,7 @@
               density="comfortable"
               variant="text"
               size="small"
-              @click.stop="showObjectTypes(item._id)"
+              @click.stop="openObjectTypesMenu(item._id)"
           >
             <v-icon/>
             <v-tooltip activator="parent" location="left">
@@ -122,26 +125,26 @@
           <my-change-button
               class="ml-2"
               prompt="Редактировать шаблон"
-              @click.stop="onShowChangeMenuTemplate(item._id)"
+              @click.stop="handleChangeTemplate(item._id)"
           />
           <my-button-table-remove
               :prompt="'Удалить'"
               class="ml-2"
-              @click:yes="onRemoveTemplate(item._id)"
+              @click:yes="handleRemoveOneTemplate(item._id)"
           />
         </template>
 
         <template #footer.prepend>
-          <div class="mr-auto text-grey-darken-1 pl-4 mt-2" v-if="selectedTemplates.length">
+          <div class="mr-auto text-grey-darken-1 pl-4 mt-2" v-if="templatesSelected.length">
             <v-icon icon="mdi-order-bool-ascending-variant" class="mr-1"/>
-            Выбрано элементов: {{ selectedTemplates.length }}
+            Выбрано элементов: {{ templatesSelected.length }}
           </div>
         </template>
       </v-data-table>
 
-      <v-overlay v-model="objectTypesOverlay" class="d-flex justify-center align-center">
-        <v-sheet class="d-flex flex-column ga-4 px-7 py-4 h-100 rounded-lg" width="800">
-          <v-chip text="Типы объектов" color="blue-darken-1" variant="flat" label/>
+      <v-overlay v-model="objectTypesMenuIsOpen" class="d-flex justify-center align-center ma-4">
+        <v-sheet class="d-flex flex-column ga-4 pa-4 h-100 rounded-lg" width="100%">
+          <v-chip text="Типы и ракурсы объектов" color="blue-darken-1" variant="flat" label/>
           <div class="d-flex ga-1">
             <v-btn
                 prepend-icon="mdi-tray-arrow-down"
@@ -150,7 +153,9 @@
                 size="small"
                 rounded="md"
                 border
-                @click="onDownloadTemplate"
+                :loading="downloadTemplateLoading"
+                :disabled="downloadTemplateLoading"
+                @click="handleDownloadTemplate"
             >
               Скачать шаблон
               <v-tooltip activator="parent" text="Скачать шаблон"/>
@@ -162,264 +167,395 @@
                 size="small"
                 rounded="md"
                 border
-                @click="$refs.excelFileInput.click()"
+                @click="$refs.inputFile.click()"
             >
               Загрузить типы
               <v-tooltip activator="parent" text="Загрузить шаблон"/>
             </v-btn>
             <v-btn
-                :loading="fetching"
+                :loading="templatesLoading"
                 prepend-icon="mdi-update"
                 variant="text"
                 size="small"
                 rounded="md"
                 border
-                @click="fetchTemplatesCollection"
+                @click="updateObjectTypesTable"
             >
               Обновить
               <v-tooltip activator="parent" text="Обновить данные"/>
             </v-btn>
           </div>
-          <div>
-            <v-data-table
-                v-model="selectedObjectTypes"
-                v-model:items-per-page="objectTypesItemsPerPage"
-                :items-per-page-options="objectTypesItemsPerPageOptions"
-                :items-per-page="objectTypesItemsPerPage"
-                :items="objectTypesMap"
-                :headers="objectTypesHeaders"
-                style="max-height: 300px"
-                items-per-page-text="Кол-во на странице"
-                loading-text="Загрузка данных..."
-                no-data-text="Нет данных"
-                class="bg-transparent"
-                density="comfortable"
-                items-per-page="5"
-                item-value="_id"
-                fixed-header
-                show-select
-                @update:current-items="selectedTemplates = []"
+
+          <v-sheet class="pr-4 overflow-y-scroll" max-height="350">
+            <v-card
+                v-for="type of objectTypes"
+                :key="type._id"
+                class="mt-2 border rounded-lg"
+                variant="text"
+                density="compact"
             >
-              <template #item.actions="{ item }">
-                <my-change-button
-                    class="ml-2"
-                    prompt="Редактировать"
-                    @click.stop=""
+              <v-card-title class="text-caption">
+                <v-icon icon="mdi-zip-box-outline" size="20"/>
+                {{ type.name }}
+              </v-card-title>
+              <v-card-text class="d-flex ga-2 flex-wrap">
+                <v-chip
+                    v-for="angle of type.angles"
+                    color="blue-darken-1"
+                    density="comfortable"
+                    size="small"
+                    variant="outlined"
+                    :text="angle.name"
                 />
-                <my-button-table-remove
-                    :prompt="'Удалить'"
-                    class="ml-2"
-                    @click:yes="onRemoveTemplate(item._id)"
-                />
-              </template>
+              </v-card-text>
+            </v-card>
+          </v-sheet>
 
-              <template #footer.prepend>
-                <div class="mr-auto text-grey-darken-1 pl-4 mt-2" v-if="selectedTemplates.length">
-                  <v-icon icon="mdi-order-bool-ascending-variant" class="mr-1"/>
-                  Выбрано элементов: {{ selectedTemplates.length }}
-                </div>
-              </template>
-            </v-data-table>
-          </div>
         </v-sheet>
       </v-overlay>
 
-      <v-overlay v-model="changeTemplateOverlay" class="d-flex justify-center align-center">
-        <v-sheet rounded="lg" width="600px">
-          <v-card-item>Редактирование заголовка</v-card-item>
-          <v-card-item>
-            <v-form v-model="changeTemplateFormIsValid" ref="changeTemplateForm" class="d-flex flex-column mt-2">
-              <v-row dense>
-                <v-col :cols="12">
-                  <v-text-field
-                      v-model="selectedTemplate.title"
-                      v-bind="inputFieldStyle"
-                      label="Заголовок"
-                  />
-                </v-col>
-              </v-row>
-            </v-form>
-          </v-card-item>
-          <v-card-actions>
-            <my-btn-submit
-                text="Принять"
-                prepend-icon="mdi-checkbox-multiple-marked-outline"
-                @click="onChangeTemplate"
-            />
-          </v-card-actions>
-        </v-sheet>
-      </v-overlay>
+      <!--      <v-overlay v-model="changeTemplateOverlay" class="d-flex justify-center align-center">-->
+      <!--        <v-sheet rounded="lg" width="600px">-->
+      <!--          <v-card-item>Редактирование заголовка</v-card-item>-->
+      <!--          <v-card-item>-->
+      <!--            <v-form v-model="changeTemplateFormIsValid" ref="changeTemplateForm" class="d-flex flex-column mt-2">-->
+      <!--              <v-row dense>-->
+      <!--                <v-col :cols="12">-->
+      <!--                  <v-text-field-->
+      <!--                      v-model="selectedTemplate.title"-->
+      <!--                      v-bind="inputFieldStyle"-->
+      <!--                      label="Заголовок"-->
+      <!--                  />-->
+      <!--                </v-col>-->
+      <!--              </v-row>-->
+      <!--            </v-form>-->
+      <!--          </v-card-item>-->
+      <!--          <v-card-actions>-->
+      <!--            <my-btn-submit-->
+      <!--                text="Принять"-->
+      <!--                prepend-icon="mdi-checkbox-multiple-marked-outline"-->
+      <!--                @click="onChangeTemplate"-->
+      <!--            />-->
+      <!--          </v-card-actions>-->
+      <!--        </v-sheet>-->
+      <!--      </v-overlay>-->
 
       <v-file-input
+          v-model="templateFile"
           class="d-none"
-          ref="excelFileInput"
+          ref="inputFile"
           accept=".xlsx"
-          @change="onUploadTemplate"
+          @change="handleUploadTemplate"
       />
+
     </v-sheet>
   </v-container>
 </template>
 
 <script setup>
-import {
-  changeTemplate,
-  downloadExcelTemplate,
-  removeSomeTemplates,
-  removeTemplate,
-  uploadExcelTemplate
-} from "@/utils/api/templates";
-import {mySearchFieldStyle, inputFieldStyle} from "@/configs/styles";
-import templatesTableHeaders from "@/configs/templatesTableHeaders";
-import objectTypesHeaders from "@/configs/objectTypesHeaders";
-import useTableOptions from "@/composables/useTableOptions";
-import useTemplates from "@/composables/useTemplates";
-import useSearch from "@/composables/useSearch";
-import {ref, watch} from 'vue';
-import {useStore} from 'vuex';
-import _ from "lodash";
+import {mySearchFieldStyle} from "@/configs/styles";
+import {useStore} from "vuex";
+import useTemplatesApi from "@/composables/use-templates-api";
+import {itemsPerPage, itemsPerPageOptions} from "@/constants/table-options";
+import templatesTableHeaders from "@/constants/templates-table-headers";
+import useObjectTypesApi from "@/composables/use-object-types-api";
+import useAnglesApi from "@/composables/use-angles-api";
+
+const vuexStore = useStore();
+const {
+  fetchAll: fetchAllTemplates,
+  create: createTemplate,
+  removeMany: removeManyTemplates,
+  removeOne: removeOneTemplate,
+  downloadTemplate,
+  uploadTemplate,
+} = useTemplatesApi();
 
 const {
-  _search,
-  search,
-  searching
-} = useSearch();
+  fetchMappedAllByTemplate: fetchMappedObjectTypesByTemplate,
+  removeMany: removeManyObjectTypes,
+  removeOne: removeOneObjectType,
+} = useObjectTypesApi();
 
 const {
-  fetching,
-  createNewTemplate,
-  templatesCollection,
-  fetchTemplatesCollection
-} = useTemplates();
+  fetchAllByObjectType: fetchAllAnglesByObjectType,
+  removeMany: removeManyAngles,
+  removeOne: removeOneAngle
+} = useAnglesApi();
 
-const {
-  itemsPerPage: templatesItemsPerPage,
-  itemsPerPageOptions: templatesItemsPerPageOptions
-} = useTableOptions();
+const inputFile = ref();
+const templateFile = ref();
+const templates = ref([]);
+const templatesSearchQuery = ref('');
+const templatesLoading = ref(false);
+const templatesSelected = ref([]);
+const downloadTemplateLoading = ref(false);
+const uploadTemplateLoading = ref(false);
+const activeTemplateId = ref(null);
 
-const {
-  itemsPerPage: objectTypesItemsPerPage,
-  itemsPerPageOptions: objectTypesItemsPerPageOptions
-} = useTableOptions();
+const objectTypes = ref([]);
+const objectTypesSearchQuery = ref('');
+const objectTypesLoading = ref(false);
+const objectTypesSelected = ref([]);
+const objectTypesMenuIsOpen = ref(false);
 
-const store = useStore();
-const selectedTemplate = ref(null);
-const selectedTemplateId = ref(null);
-const selectedTemplates = ref([]);
-const selectedObjectTypes = ref([]);
-const objectTypesOverlay = ref(false);
-const changeTemplateFormIsValid = ref(false);
-const changeTemplateOverlay = ref(false);
+const angles = ref([]);
+const anglesSearchQuery = ref('');
+const anglesLoading = ref(false);
+const anglesSelected = ref([]);
+const anglesMenuIsOpen = ref(false);
 
-onBeforeMount(() => {
-  fetchTemplatesCollection()
-      .then(() => {
-        console.log(templatesCollection.value, search.value)
-      })
-});
 
-watch(selectedTemplateId, () => {
-  selectedTemplate.value = _.cloneDeep(templatesCollection.value.find(e => e._id === selectedTemplateId.value));
-})
-
-const objectTypesMap = computed(() => {
-  return templatesCollection.value
-      ?.find(e => e._id === selectedTemplateId.value)
-      ?.objectTypes?.map(e => ({
-        _id: e._id,
-        type: e.type,
-        anglesCount: e.angles?.length ?? 0,
-      })) ?? [];
+onMounted(() => {
+  updateTemplatesTable();
 });
 
 
-const templatesMap = computed(() => {
-  return templatesSearchFilter.value.map(e => ({
-    _id: e._id,
-    title: e?.title || '-',
-    objectTypesLen: e.objectTypes?.length ?? 0,
-    isBase: e?.isBase === true ? 'Да' : e?.isBase === false ? 'Нет' : '-',
-  }));
+const templatesSearchFiltered = computed(() => {
+  if (!templatesSearchQuery.value) return templates.value;
+  const templatesSearchRegex = new RegExp(templatesSearchQuery.value, 'i');
+  return templates.value.filter(e => {
+    const join = [
+      e.name
+    ].filter(e => !!e).join(' ');
+    return templatesSearchRegex.test(join);
+  });
 });
 
+const objectTypesSearchFiltered = computed(() => {
+  if (!objectTypesSearchQuery.value) return objectTypes.value;
+  const objectTypesSearchRegex = new RegExp(objectTypesSearchQuery.value, 'i');
+  return objectTypes.value.filter(e => {
+    const join = [
+      e.name
+    ].filter(e => !!e).join(' ');
+    return objectTypesSearchRegex.test(join);
+  });
+});
 
-const templatesSearchFilter = computed(() => {
-  if (!search.value) return templatesCollection.value;
-  const reg = new RegExp(search.value, 'ig');
-  return templatesCollection.value.filter(e => {
-    return reg.test(e.title);
+const anglesSearchFiltered = computed(() => {
+  if (!anglesSearchQuery.value) return angles.value;
+  const anglesSearchRegex = new RegExp(anglesSearchQuery.value, 'i');
+  return angles.value.filter(e => {
+    const join = [
+      e.name
+    ].filter(e => !!e).join(' ');
+    return anglesSearchRegex.test(join);
   });
 });
 
 
-const showObjectTypes = (templateId) => {
-  selectedTemplateId.value = templateId;
-  objectTypesOverlay.value = true;
-}
-
-
-const onDownloadTemplate = () => {
-  downloadExcelTemplate('template.xlsx')
-      .catch(err => {
-        console.log('Ошибка загрузки', err);
-        store.commit('alert/ERROR', 'Ошибка загрузки');
+function updateTemplatesTable() {
+  templatesLoading.value = true;
+  return fetchAllTemplates()
+      .then((resp) => {
+        templates.value = resp.data || [];
       })
+      .catch(e => {
+        console.log('Ошибка получения шаблонов', e);
+      })
+      .finally(() => {
+        templatesLoading.value = false;
+        templatesSelected.value = [];
+      });
 }
 
-const onChangeTemplate = () => {
-  changeTemplate(selectedTemplate.value)
+function handleCreateTemplate() {
+  templatesLoading.value = true;
+  return createTemplate({name: null, isBase: false})
       .then(() => {
-        store.commit('alert/SUCCESS', 'Заголовок изменен');
-        changeTemplateOverlay.value = false;
-        fetchTemplatesCollection();
+        updateTemplatesTable();
       })
-      .catch(err => {
-        console.log('Ошибка изменения', err);
-        store.commit('alert/ERROR', 'Ошибка изменения');
+      .catch(e => {
+        console.log('Ошибка получения шаблонов', e);
       })
 }
 
-const onUploadTemplate = (event) => {
-  console.log('selectedTemplateId.value', selectedTemplateId.value)
-  if (event.target.files && event.target.files.length > 0 && selectedTemplateId.value) {
-    uploadExcelTemplate(selectedTemplateId.value, event.target.files[0])
+function updateObjectTypesTable() {
+  if (!activeTemplateId.value) return;
+  objectTypesLoading.value = true;
+  return fetchMappedObjectTypesByTemplate(activeTemplateId.value)
+      .then((resp) => {
+        objectTypes.value = resp.data || [];
+      })
+      .catch(e => {
+        console.log('Ошибка получения типо объектов', e);
+      })
+      .finally(() => {
+        objectTypesLoading.value = false;
+        objectTypesSelected.value = [];
+      })
+}
+
+function updateAnglesTable(objectTypeId) {
+  anglesLoading.value = true;
+  return fetchAllAnglesByObjectType(objectTypeId)
+      .then((resp) => {
+        angles.value = resp.data || [];
+      })
+      .catch(e => {
+        console.log('Ошибка получения ракурсов', e);
+      })
+      .finally(() => {
+        anglesLoading.value = false;
+        anglesSelected.value = [];
+      })
+}
+
+function handleDownloadTemplate() {
+  downloadTemplateLoading.value = true;
+  return downloadTemplate()
+      .then(resp => {
+        const url = window.URL.createObjectURL(new Blob([resp.data]));
+
+        // Создаем временную ссылку для скачивания
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'template.xlsx'); // имя файла
+        document.body.appendChild(link);
+        link.click();
+
+        // Убираем ссылку и освобождаем память
+        link.parentNode?.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        return resp;
+      })
+      .catch(e => {
+        console.log('Ошибка загрузки', e);
+        vuexStore.commit('alert/ERROR', 'Не удалось скачать файл');
+      })
+      .finally(() => {
+        downloadTemplateLoading.value = false;
+      });
+}
+
+function handleUploadTemplate(event) {
+  const files = event?.target?.files;
+  if (files && files.length > 0 && activeTemplateId.value) {
+    const formData = new FormData();
+    formData.append('file', event.target.files[0]);
+    formData.append('data', JSON.stringify({
+      templateId: activeTemplateId.value
+    }));
+    uploadTemplateLoading.value = true;
+    return uploadTemplate(formData)
         .then(() => {
-          fetchTemplatesCollection();
-          store.commit('alert/SUCCESS', 'Добавлен новый шаблон');
+          vuexStore.commit('alert/SUCCESS', 'Шаблон успешно загружен');
+          updateObjectTypesTable();
         })
-        .catch(err => {
-          console.log('Ошибка добавления нового шаблона', err);
-          store.commit('alert/ERROR', 'Ошибка добавления нового шаблона');
+        .catch(() => {
+          vuexStore.commit('alert/ERROR', 'Ошибка загрузки шаблона');
         })
+        .finally(() => {
+          uploadTemplateLoading.value = false;
+          templateFile.value = null;
+        });
   }
 }
 
-const onRemoveTemplate = (id) => {
-  removeTemplate(id)
-      .then(() => {
-        fetchTemplatesCollection();
-        store.commit('alert/SUCCESS', 'Запись удалена');
-      })
-      .catch((err) => {
-        console.log('Ошибка удаления записи', err);
-        store.commit('alert/ERROR', 'Ошибка удаления записи');
-      })
+function handleChangeTemplate(id) {
+  //  TODO: завершить логику
 }
 
-const onShowChangeMenuTemplate = (templateId) => {
-  selectedTemplateId.value = templateId;
-  changeTemplateOverlay.value = true;
+function handleRemoveOneTemplate(id) {
+  templatesLoading.value = true;
+  return removeOneTemplate(id)
+      .then(() => {
+        vuexStore.commit('alert/SUCCESS', 'Шаблон успешно удален');
+        updateTemplatesTable();
+      })
+      .catch(() => {
+        vuexStore.commit('alert/ERROR', 'Ошибка удаления');
+      })
+      .finally(() => {
+        templatesLoading.value = false;
+      });
 }
 
-const onRemoveSomeTemplates = () => {
-  if (selectedTemplates.value.length === 0) store.commit('alert/ERROR', 'Не выбраны шаблоны');
-
-  removeSomeTemplates(selectedTemplates.value)
+function handleRemoveManyTemplates() {
+  templatesLoading.value = true;
+  return removeManyTemplates(templatesSelected.value)
       .then(() => {
-        store.commit('alert/SUCCESS', 'Успешно удалены');
-        fetchTemplatesCollection();
+        vuexStore.commit('alert/SUCCESS', 'Шаблоны успешно удалены');
+        updateTemplatesTable();
       })
-      .catch(err => {
-        store.commit('alert/ERROR', 'Ошибка удаления');
+      .catch(() => {
+        vuexStore.commit('alert/ERROR', 'Ошибка удаления');
       })
+      .finally(() => {
+        templatesLoading.value = false;
+      });
+}
+
+function handleRemoveOneObjectType(id) {
+  objectTypesLoading.value = true;
+  return removeOneObjectType(id)
+      .then(() => {
+        vuexStore.commit('alert/SUCCESS', 'Тип объекта успешно удален');
+        updateTemplatesTable();
+      })
+      .catch(() => {
+        vuexStore.commit('alert/ERROR', 'Ошибка удаления');
+      })
+      .finally(() => {
+        objectTypesLoading.value = false;
+      });
+}
+
+function handleRemoveManyObjectType() {
+  objectTypesLoading.value = true;
+  return removeManyObjectTypes(objectTypesSelected.value)
+      .then(() => {
+        vuexStore.commit('alert/SUCCESS', 'Типы объекта успешно удалены');
+        updateTemplatesTable();
+      })
+      .catch(() => {
+        vuexStore.commit('alert/ERROR', 'Ошибка удаления');
+      })
+      .finally(() => {
+        objectTypesLoading.value = false;
+      });
+}
+
+function handleRemoveOneAngle(id) {
+  anglesLoading.value = true;
+  return removeOneAngle(id)
+      .then(() => {
+        vuexStore.commit('alert/SUCCESS', 'Ракурс успешно удален');
+        updateTemplatesTable();
+      })
+      .catch(() => {
+        vuexStore.commit('alert/ERROR', 'Ошибка удаления');
+      })
+      .finally(() => {
+        anglesLoading.value = false;
+      });
+}
+
+function handleRemoveManyAngle() {
+  anglesLoading.value = true;
+  return removeManyAngles(anglesSelected.value)
+      .then(() => {
+        vuexStore.commit('alert/SUCCESS', 'Ракурсы успешно удалены');
+        updateTemplatesTable();
+      })
+      .catch(() => {
+        vuexStore.commit('alert/ERROR', 'Ошибка удаления');
+      })
+      .finally(() => {
+        anglesLoading.value = false;
+      });
+}
+
+async function openObjectTypesMenu(templateId) {
+  activeTemplateId.value = templateId;
+  await updateObjectTypesTable();
+  objectTypesMenuIsOpen.value = true;
+}
+
+async function openAnglesMenu(objectTypeId) {
+  await updateAnglesTable(objectTypeId);
+  anglesMenuIsOpen.value = true;
 }
 </script>

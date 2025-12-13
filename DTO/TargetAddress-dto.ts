@@ -2,12 +2,12 @@ import {
     TargetAddressBaseSchema,
     TargetAddressIdSchema,
     TargetAddressRelationsSchema
-} from "../Models/TargetAddress-Model.js";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
-import {PledgerResponseSchemaDTO} from "./Pledger-dto.js";
-import {ContactResponseSchemaDTO} from "./Contact-dto.js";
+} from "../Models/TargetAddress-Model";
+import {DocumentModelSchema} from "../Models/Document-Model";
+import {PledgerResponseSchemaDTO} from "./Pledger-dto";
+import {ContactResponseSchemaDTO} from "./Contact-dto";
 import {z} from "zod";
-import {EmployerResponseSchemaDTO} from "./Employer-dto.js";
+import {EmployerResponseSchemaDTO} from "./Employer-dto";
 
 
 export const TargetAddressCreateSchemaDTO = TargetAddressBaseSchema

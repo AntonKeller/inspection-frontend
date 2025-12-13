@@ -1,5 +1,5 @@
-import {AngleBaseSchema, AngleIdSchema} from "../Models/Angle-Model.js";
-import {DocumentModelSchema} from "../Models/Document-Model.js";
+import {AngleBaseSchema, AngleIdSchema} from "../Models/Angle-Model";
+import {DocumentModelSchema} from "../Models/Document-Model";
 import {z} from "zod";
 
 
