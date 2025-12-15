@@ -1,0 +1,51 @@
+const targetAddressesTableHeaders = [
+    {
+        title: '',
+        key: 'actions',
+        align: 'end',
+        minWidth: 100,
+        width: 100,
+        maxWidth: 100,
+        fixed: true,
+        sortable: false,
+        _$visible: true,
+    },
+    {
+        title: 'Адрес',
+        align: 'start',
+        key: 'address',
+        value: 'address',
+        sortable: true,
+        nowrap: false,
+        _$visible: true,
+    },
+    {
+        title: 'Начало',
+        align: 'start',
+        key: 'start',
+        value: 'start',
+        sortable: true,
+        nowrap: false,
+        _$visible: true,
+    },
+    {
+        title: 'Инспектор',
+        align: 'start',
+        key: 'inspector',
+        value: 'inspector',
+        sortable: true,
+        nowrap: false,
+        _$visible: true,
+    },
+    {
+        title: 'Контакты инспектора',
+        align: 'start',
+        key: 'inspectorContacts',
+        value: 'inspectorContacts',
+        sortable: true,
+        nowrap: false,
+        _$visible: true,
+    },
+]
+
+export default targetAddressesTableHeaders;

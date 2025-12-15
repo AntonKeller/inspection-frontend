@@ -4,7 +4,7 @@
 
       <v-sheet class="border-b bg-white pb-3">
         <div>
-          <v-card-title>{{ assignment?.title }}</v-card-title>
+          <v-card-title>{{ task?.title }}</v-card-title>
           <v-card-subtitle class="d-flex align-center ga-2">
             <v-icon icon="mdi-checkbox-marked-circle-auto-outline" size="small"/>
             Текущее задание
@@ -22,7 +22,6 @@
       </v-sheet>
 
       <v-sheet class="border-b bg-white pb-3 mt-3">
-
         <v-row>
           <v-col cols="4">
             <v-sheet class="d-flex flex-column ga-4 px-7 py-4 h-100">
@@ -36,12 +35,8 @@
               </div>
               <v-divider/>
               <div class="d-flex flex-column ga-2">
-                <div>
-                  {{ assignmentCustomer }}
-                </div>
-                <div>
-                  {{ assignmentCustomerInn }}
-                </div>
+                <div>{{ customer || 'Заказчик не указан' }}</div>
+                <div>{{ customerINN ? 'ИНН:' + customerINN : 'ИНН не указан' }}</div>
               </div>
             </v-sheet>
           </v-col>
@@ -58,11 +53,11 @@
               <v-divider/>
               <div class="d-flex flex-column ga-2">
                 <div>
-                  {{ assignment?.contract?.number }}
+                  {{ agreementNum || 'Не указан номер договора' }}
                 </div>
                 <div class="d-flex align-center ga-3">
                   <v-icon icon="mdi-calendar-range" size="x-small"/>
-                  {{ assignmentContractDate }}
+                  {{ agreementDate || 'Не указана дата договора' }}
                 </div>
               </div>
             </v-sheet>
@@ -79,12 +74,9 @@
               </div>
               <v-divider/>
               <div class="d-flex flex-column ga-2">
-                <div>
-                  {{ assignmentSubContract }}
-                </div>
+                <div></div>
                 <div class="d-flex align-center ga-3">
                   <v-icon icon="mdi-calendar-range" size="x-small"/>
-                  {{ assignmentSubContractDate }}
                 </div>
               </div>
             </v-sheet>
@@ -101,7 +93,7 @@
               size="small"
               rounded="md"
               border
-              @click="onAddBlock"
+              @click="handleCreateAddress"
           >
             Добавить адрес
             <v-tooltip activator="parent" text="Добавить новую запись"/>
@@ -113,7 +105,7 @@
               size="small"
               rounded="md"
               border
-              :disabled="!selectedItems.length"
+              :disabled="!selected.length"
           >
             Операции
             <v-tooltip activator="parent" text="Операции с выделенными"/>
@@ -122,7 +114,7 @@
                 <v-list-item
                     append-icon="mdi-format-list-checks"
                     density="compact"
-                    @click="selectedItems=[]"
+                    @click="selected=[]"
                 >
                   <template #append>
                     <v-icon icon="mdi-format-list-checks" size="small"/>
@@ -151,7 +143,7 @@
                             size="small"
                             border="sm"
                             text="Ок"
-                            @click="onRemoveSomeBlocks"
+                            @click="handleRemoveManyAddresses"
                         />
                         <v-btn
                             density="comfortable"
@@ -169,7 +161,7 @@
           </v-btn>
           <div class="mx-1"></div>
           <v-btn
-              :loading="fetching"
+              :loading="loading"
               prepend-icon="mdi-update"
               variant="text"
               size="small"
@@ -182,30 +174,22 @@
           </v-btn>
           <v-spacer/>
 
-          <v-progress-circular
-              v-if="searching"
-              color="grey"
-              size="25"
-              indeterminate
-          />
-
           <v-text-field
-              v-model="_searchText"
+              v-model="searchQuery"
               v-bind="mySearchFieldStyle"
               style="max-width: 350px"
-              @update:modelValue="updateSearch"
           />
         </div>
       </v-sheet>
 
       <v-data-table
-          v-model="selectedItems"
+          v-model="selected"
           v-model:items-per-page="itemsPerPage"
           :items-per-page-options="itemsPerPageOptions"
           :items-per-page="itemsPerPage"
-          :search="searchText"
-          :headers="headers"
-          :items="itemsMap"
+          :headers="targetAddressesTableHeaders"
+          :items="targetAddressesSearchFiltered"
+          :loading="loading"
           style="max-height: 400px"
           items-per-page-text="Кол-во на странице"
           loading-text="Загрузка данных..."
@@ -216,7 +200,7 @@
           item-value="_id"
           fixed-header
           show-select
-          @update:current-items="selectedItems = []"
+          @update:current-items="selected = []"
       >
         <template #item.actions="{ item }">
           <v-btn
@@ -224,7 +208,7 @@
               density="comfortable"
               variant="text"
               size="small"
-              @click.stop="onOpenBlockCard(item._id)"
+              @click.stop="navigateTo(`${item._id}/`)"
           >
             <v-icon/>
             <v-tooltip activator="parent" location="left">
@@ -234,18 +218,18 @@
           <my-change-button
               class="ml-2"
               prompt="Редактировать ТЗ"
-              @click.stop="onBlockChange(item._id)"
+              @click.stop="navigateTo(`${item._id}/change`)"
           />
           <my-button-table-remove
               :prompt="'Удалить'"
               class="ml-2"
-              @click:yes="onRemoveBlock(item._id)"
+              @click:yes="handleRemoveAddress(item._id)"
           />
         </template>
         <template #footer.prepend>
-          <div class="mr-auto text-grey-darken-1 pl-4 mt-2" v-if="selectedItems.length">
+          <div class="mr-auto text-grey-darken-1 pl-4 mt-2" v-if="selected.length">
             <v-icon icon="mdi-order-bool-ascending-variant" class="mr-1"/>
-            Выбрано элементов: {{ selectedItems.length }}
+            Выбрано элементов: {{ selected.length }}
           </div>
         </template>
       </v-data-table>
@@ -253,279 +237,164 @@
   </v-container>
 </template>
 
-<script>
-import {mySearchFieldStyle, navigateBackBtnStyle, myBtnPlus, myTableSheetStyle} from "../../../../configs/styles";
-import {
-  fetchAssignmentBlocks,
-  removeSomeBlocks,
-  sendAssignmentBlock
-} from "../../../../utils/api/api_assignment_blocks";
-import {unixDateToMiddleDateString, unixDateToShortDateString} from "../../../../utils/functions";
-import {removeAssignmentBlock} from "@/utils/api/api_assignment_blocks";
-import {fetchAssignmentOneById} from "@/utils/api/api_assignments";
-import {navigateTo} from "nuxt/app";
-import _ from "lodash";
+<script setup>
+import {mySearchFieldStyle, navigateBackBtnStyle} from "../../../../configs/styles";
+import targetAddressesTableHeaders from "../../../../constants/target-addresses-table-headers";
+import {itemsPerPage, itemsPerPageOptions} from "@/constants/table-options";
+import useTasksApi from "../../../../composables/use-tasks-api";
+import useTargetAddressesApi from "../../../../composables/use-target-addresses-api";
+import {useStore} from "vuex";
+import {escapeRegExp} from "lodash/escapeRegExp";
 
-export default {
-  name: "assignment-card-page",
 
-  data() {
-    return {
-      headers: [
-        {
-          title: 'Адрес',
-          align: 'start',
-          key: 'address',
-          value: 'address',
-          sortable: true,
-          nowrap: false,
-          _$visible: true,
-        },
-        {
-          title: 'Начало',
-          align: 'start',
-          key: 'start',
-          value: 'start',
-          sortable: true,
-          nowrap: false,
-          _$visible: true,
-        },
-        {
-          title: 'Инспектор',
-          align: 'start',
-          key: 'inspector',
-          value: 'inspector',
-          sortable: true,
-          nowrap: false,
-          _$visible: true,
-        },
-        {
-          title: 'Контакты инспектора',
-          align: 'start',
-          key: 'inspectorContacts',
-          value: 'inspectorContacts',
-          sortable: true,
-          nowrap: false,
-          _$visible: true,
-        },
-        {
-          align: 'end',
-          key: 'actions',
-          sortable: false,
-          minWidth: 150,
-          maxWidth: 150,
-          width: 150,
-          nowrap: true,
-        },
-      ],
-      items: [],
-      selectedItems: [],
-      fetching: false,
-      searching: false,
-      assignment: null,
-      _searchText: '',
-      searchText: '',
-      itemsPerPage: 10,
-      itemsPerPageOptions: [
-        {value: 10, title: '10'},
-        {value: 25, title: '25'},
-        {value: 50, title: '50'},
-      ],
-      timeDateConfig: {
-        weekday: 'short', // weekday: 'short',
-        year: 'numeric',
-        month: 'short', // month: 'short',
-        day: 'numeric',
-      },
+const vuexStore = useStore();
+const task = ref({});
+const targetAddresses = ref([]);
+const selected = ref([]);
+const loading = ref(false);
+const searchQuery = ref('');
+const dateTimeConfig = {
+  weekday: 'short', // weekday: 'short',
+  year: 'numeric',
+  month: 'short', // month: 'short',
+  day: 'numeric',
+}
+const {
+  fetchOne: fetchOneTask
+} = useTasksApi();
+const {
+  create: createAddress,
+  fetchAllByTask: fetchAllTargetAddressesByTask,
+  removeOne: removeOneAddress,
+  removeMany: removeManyAddresses
+} = useTargetAddressesApi();
 
-      // IMPORT STYLES
-      navigateBackBtnStyle,
-      mySearchFieldStyle,
-      myTableSheetStyle,
-      myBtnPlus,
-    }
-  },
 
-  beforeMount() {
-    fetchAssignmentOneById(useRoute().params.assignmentId)
-        .then(resp => {
-          this.assignment = resp.data;
-          this.fetchBlocks();
-        })
-        .catch(err => {
-          console.log('Ошибка, такого задания не существует', err);
-          this.$store.commit('alert/ERROR', 'Такого задания не существует');
-          this.navigateBack();
-        })
-  },
+onMounted(async () => {
+  await handleFetchOneTask(useRoute().params.taskId);
+  await updateTable(task.value._id);
+});
 
-  watch: {
-    _searchText() {
-      this.searching = true;
-    }
-  },
 
-  computed: {
+const targetAddressesSearchFiltered = computed(() => {
+  if (!searchQuery.value) return targetAddresses.value;
+  const searchRegex = new RegExp(escapeRegExp(searchQuery.value), 'i');
+  return targetAddresses.value.filter((e) => {
+    const pledger = e.pledger
+        ? `${e.pledger.firstName} ${e.pledger.surname} ${e.pledger.lastName} ${e.pledger.inn}`.trim()
+        : '';
+    const contact = e.contact
+        ? `${e.contact.firstName} ${e.contact.surname} ${e.contact.lastName}`.trim()
+        : '';
+    const employer = e.employer
+        ? `${e.employer.firstName} ${e.employer.surname} ${e.employer.lastName} ${e.employer.email}`.trim()
+        : '';
+    return searchRegex.test([
+      e.title || '',
+      e.address || '',
+      pledger,
+      contact,
+      employer
+    ].join(' '));
+  });
+});
 
-    itemsMap() {
-      return this.itemsSearchFilter.map(e => ({
-        _id: e._id,
-        address: e?.address ?? '-',
-        start: this.unixDateToMiddleDateString(e?.startDate),
-        inspector: this.getInspector(e?.inspector),
-        inspectorContacts: this.getInspectorContacts(e?.inspector),
-      }))
-    },
+const customer = computed(() => task.value.customer);
+const customerINN = computed(() => customer.value?.inn);
+const agreementNum = computed(() => task.value?.agreement?.number);
+const agreementDate = computed(() => task.value?.agreement?.date);
 
-    itemsSearchFilter() {
-      if (typeof this.searchText === 'string' && this.searchText.length > 0) {
-        return this.items.filter(block => {
-          return [
-            block.title,
-            block.description,
-          ].filter(e => !!e).find(value => (new RegExp(this.searchText, 'ig')).test(value));
-        });
-      }
-      return this.items;
-    },
 
-    assignmentCustomerInn() {
-      const inn = this.assignment?.customer?.inn;
-      return inn ? `ИНН: ${inn}` : '[ИНН не указан]';
-    },
-
-    assignmentCustomer() {
-      return this.assignment?.customer?.shortName || '[Организация не указана]';
-    },
-
-    assignmentContractDate() {
-      const date = this.assignment?.contract?.date;
-      return date ? new Date(date).toLocaleDateString(undefined, this.timeDateConfig) : '[дата не указана]';
-    },
-
-    assignmentContract() {
-      const number = this.assignment?.contract?.number;
-      return number ? `№ ${number}` : '[Номер договора отсутствует]';
-    },
-
-    assignmentSubContract() {
-      const num = this.assignment?.subContract?.number;
-      return num ? num : '[Номер не указан]'
-    },
-
-    assignmentSubContractDate() {
-      const date = this.assignment?.subContract?.date;
-      return date ? new Date(date).toLocaleDateString(undefined, this.timeDateConfig) : '[дата не указана]';
-    }
-  },
-
-  methods: {
-
-    unixDateToMiddleDateString,
-    unixDateToShortDateString,
-
-    updateTable() {
-      this.fetching = true;
-      const timeoutId = setTimeout(() => {
-        this.fetchBlocks();
-        this.fetching = false;
-        clearTimeout(timeoutId);
-      }, 500)
-    },
-
-    updateSearch: _.debounce(function (search) {
-      this.searchText = search;
-      this.searching = false;
-    }, 900),
-
-    fetchBlocks() {
-      this.fetching = true;
-      fetchAssignmentBlocks(this.assignment._id)
-          .then(response => {
-            this.items = response.data ?? [];
-          })
-          .catch(err => {
-            console.log('Ошибка получения списка объектов', err);
-            this.$store.commit('alert/ERROR', 'Ошибка получения списка объектов');
-          })
-          .finally(() => {
-            this.fetching = false;
-            this.selectedItems = [];
-          })
-    },
-
-    // table fields
-    getInspector(inspector) {
-      if (!inspector?.surname && !inspector?.firstName && !inspector?.lastName) return '-';
-      return `${inspector?.surname || ''} ${inspector?.firstName || ''} ${inspector?.lastName || ''}`;
-    },
-
-    getInspectorContacts(inspector) {
-      if (!inspector?.phoneNumber && !inspector?.email) return '-';
-      return `${inspector?.phoneNumber} | ${inspector?.email}`;
-    },
-
-    onAddBlock() {
-      if (!this.assignment._id) {
-        this.$store.commit('alert/ERROR', 'Ошибка при добавлении адреса, отсутствует id задания');
-        return;
-      }
-      sendAssignmentBlock(this.assignment._id, {
-        _id: null,
-        title: '[пустой]', // Заголовок
-        address: null, // Адрес
-        startDate: null, // Дата начала
-        pledger: null, // Залогодатель
-        contact: null, // Контакт
-        inspector: null, // Инспектор
-      }).then(() => {
-        this.$store.commit('alert/SUCCESS', 'Добавлен новый адрес осмотра');
-        this.selectedItems = [];
-        this.fetchBlocks();
-      }).catch((err) => {
-        this.$store.commit('alert/ERROR', 'Ошибка добавления нового адреса');
-        console.log('Ошибка добавления', err);
+function handleFetchOneTask(id) {
+  if (!id) return;
+  return fetchOneTask(id)
+      .then(resp => {
+        task.value = resp.data || {};
+        return resp;
       })
-    },
+      .catch(e => {
+        console.log('Не удалось загрузить данные задания', e);
+        vuexStore.commit('alert/ERROR', 'Не удалось загрузить задание');
+        navigateBack();
+      });
+}
 
-    onOpenBlockCard(id) {
-      navigateTo(`${id}/`);
-    },
+function updateTable(taskId) {
+  if (!taskId) return;
+  return fetchAllTargetAddressesByTask(taskId)
+      .then(resp => {
+        targetAddresses.value = resp.data || [];
+      })
+      .catch(e => {
+        console.log('Не удалось загрузить данные адресов', e);
+        vuexStore.commit('alert/ERROR', 'Не удалось загрузить адреса');
+        navigateBack();
+      })
+      .finally(() => {
+        selected.value = [];
+      });
+}
 
-    onBlockChange(id) {
-      navigateTo(`${id}/change`);
-    },
+function navigateBack() {
+  navigateTo(`/manager/tasks`);
+}
 
-    onRemoveSomeBlocks() {
-      if (!this.selectedItems || this.selectedItems.length === 0) return;
-      removeSomeBlocks()
-          .then(() => {
-            this.$store.commit('alert/SUCCESS', 'Записи удалены');
-            this.selectedItems = [];
-            this.fetchBlocks();
-          })
-          .catch(err => {
-            console.log('Ошибка удаления записей', err);
-            this.$store.commit('alert/ERROR', 'Ошибка удаления записей');
-          })
-    },
-
-    onRemoveBlock(blockID) {
-      removeAssignmentBlock(blockID)
-          .then(() => {
-            this.$store.commit('alert/SUCCESS', 'Адрес успешно удален');
-            this.selectedItems = [];
-            this.fetchBlocks();
-          })
-          .catch(err => {
-            this.$store.commit('alert/ERROR', 'Не удалось удалить адрес');
-            console.log('Ошибка удаления адреса', err);
-          })
-    },
-
-    navigateBack() {
-      navigateTo(`/manager/assignments`);
-    },
+function handleCreateAddress() {
+  if (!task.value._id) return;
+  const data = {
+    title: null,
+    startDate: null,
+    address: null,
+    pledgerId: null,
+    contactId: null,
+    employerId: null,
+    taskId: task.value._id
   }
+  loading.value = true;
+  return createAddress(data)
+      .then(() => {
+        updateTable();
+      })
+      .catch(e => {
+        console.log('Ошибка добавления', e);
+        vuexStore.commit('alert/ERROR', 'Ошибка добавления адреса');
+      })
+      .finally(() => {
+        loading.value = false;
+      });
+}
+
+function handleRemoveAddress(id) {
+  if (!id) return;
+  loading.value = true;
+  return removeOneAddress(id)
+      .then(() => {
+        updateTable();
+        vuexStore.commit('alert/SUCCESS', 'Адрес успешно удален');
+      })
+      .catch(e => {
+        console.log('Ошибка удаления адреса', e);
+        vuexStore.commit('alert/ERROR', 'Ошибка удаления адреса');
+      })
+      .finally(() => {
+        loading.value = false;
+      });
+}
+
+function handleRemoveManyAddresses() {
+  if (!Array.isArray(selected.value) || selected.value.length === 0) return;
+  loading.value = true;
+  return removeManyAddresses(selected.value)
+      .then(() => {
+        updateTable();
+        vuexStore.commit('alert/SUCCESS', 'Адреса успешно удалены');
+      })
+      .catch(e => {
+        console.log('Ошибка удаления адресов', e);
+        vuexStore.commit('alert/ERROR', 'Ошибка удаления адресов');
+      })
+      .finally(() => {
+        loading.value = false;
+      });
 }
 </script>

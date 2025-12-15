@@ -216,6 +216,7 @@ import useTasksApi from "@/composables/use-tasks-api";
 import {useStore} from "vuex";
 import taskTableHeaders from "@/constants/task-table-headers";
 import {itemsPerPage, itemsPerPageOptions} from "@/constants/table-options";
+import {escapeRegExp} from "lodash/escapeRegExp";
 
 
 const {
@@ -241,7 +242,7 @@ onMounted(() => {
 
 const tasksSearchFilter = computed(() => {
   if (!searchQuery.value) return tasks.value;
-  const searchRegex = new RegExp(searchQuery.value, 'i');
+  const searchRegex = new RegExp(escapeRegExp(searchQuery.value), 'i');
   return tasks.value.filter(item => {
     const row = [
       item?.title,
@@ -325,6 +326,7 @@ function handleRemoveManyTasks() {
         return resp;
       })
       .catch(e => {
+        console.log('Ошибка удаления', e);
         vuexStore.commit('alert/ERROR', 'Ошибка удаления');
         return [];
       })

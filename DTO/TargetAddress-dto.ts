@@ -2,8 +2,8 @@ import {
     TargetAddressBaseSchema,
     TargetAddressIdSchema,
     TargetAddressRelationsSchema
-} from "../Models/TargetAddress-Model";
-import {DocumentModelSchema} from "../Models/Document-Model";
+} from "@/Models/TargetAddress-Model";
+import {DocumentModelSchema} from "@/Models/Document-Model";
 import {PledgerResponseSchemaDTO} from "./Pledger-dto";
 import {ContactResponseSchemaDTO} from "./Contact-dto";
 import {z} from "zod";
