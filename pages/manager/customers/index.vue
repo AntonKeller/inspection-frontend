@@ -116,22 +116,8 @@
       <v-data-table
           v-model="selected"
           v-model:items-per-page="itemsPerPage"
-          :items-per-page-options="itemsPerPageOptions"
-          :items-per-page="itemsPerPage"
-          :items="customersSearchFiltered"
-          :headers="customerTableHeaders"
-          :search="searchQuery"
-          style="max-height: 500px"
-          items-per-page-text="Кол-во на странице"
-          loading-text="Загрузка данных..."
-          no-data-text="Нет данных"
-          class="bg-transparent"
-          density="comfortable"
-          items-per-page="5"
-          item-value="_id"
-          fixed-header
-          show-select
-          @update:current-items="selected = []"
+          v-model:page="page"
+          v-bind="{...commonTableConfig, headers, items: itemsFiltered, loading}"
       >
         <template v-slot:item.actions="{ item }">
           <my-change-button
@@ -144,6 +130,17 @@
               class="ml-2"
           />
         </template>
+
+        <template #item.member="{ item }">
+          <div>{{ item.memberFullName }}</div>
+          <div class="text-grey-darken-1">{{ item.memberPosition }}</div>
+        </template>
+
+        <template #item.contacts="{ item }">
+          <div>{{ item.email }}</div>
+          <div>{{ item.phoneNumberWork }}</div>
+        </template>
+
         <template #footer.prepend>
           <div class="mr-auto text-grey-darken-1 pl-4 mt-2" v-if="selected.length">
             <v-icon icon="mdi-order-bool-ascending-variant" class="mr-1"/>
@@ -158,10 +155,10 @@
 <script setup>
 import {mySearchFieldStyle} from "@/configs/styles";
 import {navigateTo} from "nuxt/app";
-import customerTableHeaders from "@/constants/customer-table-headers";
+import {customerTableHeaders as headers} from "@/constants/customer-table-headers";
 import useCustomersApi from "@/composables/use-customers-api";
 import {useStore} from "vuex";
-import {itemsPerPage, itemsPerPageOptions} from "@/constants/table-options";
+import {commonTableConfig} from "@/configs/common-table-config.js";
 
 
 const vuexStore = useStore();
@@ -175,6 +172,8 @@ const {
   removeOne: removeOneCustomer,
   removeMany: removeManyCustomers
 } = useCustomersApi();
+const itemsPerPage = ref(10);
+const page = ref(1);
 
 
 onMounted(() => {
@@ -182,7 +181,7 @@ onMounted(() => {
 });
 
 
-const customersSearchFiltered = computed(() => {
+const itemsFiltered = computed(() => {
   if (!searchQuery.value) return customers.value;
   const searchRegex = new RegExp(customers.value, 'i');
   return customers.value.filter(e => {
@@ -233,52 +232,40 @@ function handleCreateCustomer() {
   loading.value = true;
 
   return createCustomer(data)
-      .then(() => {
-        vuexStore.commit('alert/SUCCESS', 'Добавлен новый заказчик');
-        updateTable();
-      })
-      .catch(err => {
-        console.log('Ошибка добавления заказчика', err);
-        vuexStore.commit('alert/ERROR', 'Ошибка добавления');
-      })
-      .finally(() => {
-        loading.value = false;
-      });
+      .then((r) => successHandler(r, 'Добавлен новый заказчик'))
+      .catch((e) => errorHandler(e))
+      .finally(finallyHandler);
 }
 
 function handleRemoveCustomer(id) {
-
   loading.value = true;
-
   return removeOneCustomer(id)
-      .then(() => {
-        vuexStore.commit('alert/SUCCESS', 'Заказчик успешно удален');
-        updateTable();
-      })
-      .catch((err) => {
-        vuexStore.commit('alert/ERROR', 'Ошибка удаления заказчика');
-        console.log('Ошибка удаления заказчика', err);
-      })
-      .finally(() => {
-        loading.value = false;
-      });
+      .then((r) => successHandler(r, 'Заказчик успешно удален'))
+      .catch((e) => errorHandler(e))
+      .finally(finallyHandler);
 }
 
 function handleRemoveCustomers() {
-
   loading.value = true;
-
   return removeManyCustomers(selected.value)
-      .then(() => {
-        vuexStore.commit('alert/SUCCESS', 'Записи удалены');
-        updateTable();
-      })
-      .catch(err => {
-        console.log('Ошибка удаления записей', err);
-        vuexStore.commit('alert/ERROR', 'Ошибка удаления записей');
-      })
-      .finally(() => {
-        loading.value = false;
-      });
+      .then((r) => successHandler(r, 'Записи удалены'))
+      .catch((e) => errorHandler(e))
+      .finally(finallyHandler);
+}
+
+
+function successHandler(r, msg) {
+  vuexStore.commit('alert/SUCCESS', msg || 'Записи удалены');
+  updateTable();
+  return r;
+}
+
+function errorHandler(e, msg) {
+  console.log('Ошибка удаления записей', e);
+  vuexStore.commit('alert/ERROR', msg || e.response?.data?.message || 'Неизвестная ошибка');
+}
+
+function finallyHandler() {
+  loading.value = false;
 }
 </script>

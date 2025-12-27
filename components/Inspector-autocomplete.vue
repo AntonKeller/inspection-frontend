@@ -1,16 +1,16 @@
 <template>
   <div class="d-flex ga-1">
     <v-autocomplete
-        :items="contracts"
+        :items="inspectors"
         :loading="fetching"
-        :custom-filter="contractSearchFilter"
-        @update:menu="onUpdateMenuContracts"
+        :custom-filter="inspectorSearchFilter"
+        @update:menu="onUpdateMenuInspectors"
         prepend-inner-icon="mdi-file-document-edit"
         no-data-text="нет данных"
         color="yellow-darken-3"
         variant="outlined"
         density="compact"
-        label="Договор с заказчиком"
+        label="Инспектор"
         closable-chips
         hide-selected
         chips
@@ -19,7 +19,7 @@
       <template #chip="{ props, item }">
         <v-chip
             v-bind="props"
-            :text="`${item.raw?.number} / ${unixDateToLongDateString(item.raw?.date)}`"
+            :text="`${item.raw?.firstName || ''} ${item.raw?.surname || ''} ${item.raw?.lastName || ''}`"
             prepend-icon="mdi-file-document-edit"
             color="blue-grey-darken-3"
             density="comfortable"
@@ -31,8 +31,8 @@
         <v-list-item
             v-bind="props"
             prepend-icon="mdi-file-document-edit"
-            :title="item.raw?.number"
-            :subtitle="unixDateToLongDateString(item.raw?.date)"
+            :title="`${item.raw?.firstName || ''} ${item.raw?.surname || ''} ${item.raw?.lastName || ''}`"
+            :subtitle="`${item.raw?.phoneNumber} / ${item.raw?.email}`"
         >
           <template #append>
             <v-btn
@@ -40,7 +40,7 @@
                 color="red-darken-4"
                 density="comfortable"
                 variant="text"
-                @click.stop="removeContract(item.raw._id)"
+                @click.stop="removeInspector(item.raw._id)"
             >
               <v-icon/>
               <v-tooltip activator="parent">
@@ -53,93 +53,85 @@
     </v-autocomplete>
 
     <v-btn
-        v-if="!hideButtonAdd"
         class="border-sm border-dashed"
         variant="outlined"
         icon="mdi-plus"
         rounded="lg"
         size="small"
-        @click="contractMenuAddVisible = true"
+        @click="formInspectorAddVisible=true"
     >
       <v-icon/>
       <v-tooltip activator="parent" location="left">
-        Добавить новый договор с заказчиком
+        Добавить инспектора
       </v-tooltip>
     </v-btn>
 
-    <v-overlay v-model="contractMenuAddVisible" class="d-flex justify-center align-center">
-      <my-form-contract-add @add:success="onContractAddSuccess" @click:close="contractMenuAddVisible = false"/>
+    <v-overlay v-model="formInspectorAddVisible" class="d-flex justify-center align-center">
+      <form-inspector-add @add:success="onFormInspectorAddClose" @close="formInspectorAddVisible=false"/>
     </v-overlay>
   </div>
 </template>
 
 <script>
-import {unixDateToLongDateString} from "../../../utils/functions";
-import {fetchContracts, removeContract} from "../../../utils/api/api_contracts";
+import {fetchInspectors, removeInspector} from "../utils/api/api_inspectors.js";
 
 export default {
-  name: "contracts",
-  inheritAttrs: false,
-
-  props: {
-    hideButtonAdd: Boolean,
-  },
+  name: "inspectors",
 
   data() {
     return {
-      contractsList: [], // TODO: Запросы и Vue вывод полей
+      inspectorsList: [], // TODO: Запросы и Vue вывод полей
       fetching: false,
-      contractMenuAddVisible: false,
-      contractRules: [v => v || 'Договор с заказчиком должен быть выбран'],
+      formInspectorAddVisible: false,
+      inspectorRules: [v => v || 'Выберите инспектора'],
     }
   },
-
   computed: {
-    contracts() {
-      return this.contractsList?.filter(contract => !contract.parent) || [];
+    inspectors() {
+      return this.inspectorsList?.filter(inspector => !inspector.parent) || [];
     },
   },
-
   methods: {
 
-    unixDateToLongDateString,
-
-    onContractAddSuccess() {
-      this.fetchContractsList();
-      this.contractMenuAddVisible = false;
+    onFormInspectorAddClose() {
+      this.formInspectorAddVisible = false;
+      this.fetchInspectors()
     },
 
-    onUpdateMenuContracts(status) {
-      if (status) this.fetchContractsList();
+    onUpdateMenuInspectors(status) {
+      if (status) this.fetchInspectors();
     },
 
-    contractSearchFilter(value, query, item) {
+    inspectorSearchFilter(value, query, item) {
       return [
-        item.raw?.number || null,
+        item.raw?.firstName || null,
+        item.raw?.surname || null,
+        item.raw?.lastName || null,
+        item.raw?.email || null,
       ].some(value => (new RegExp(query, 'ig')).test(value));
     },
 
-    removeContract(id) {
-      removeContract(id)
+    removeInspector(id) {
+      removeInspector(id)
           .then(() => {
-            this.fetchContractsList();
+            this.fetchInspectors();
           })
           .catch(err => {
             console.log('Не удалось удалить', err);
           })
     },
 
-    async fetchContractsList() {
+    async fetchInspectors() {
 
       this.fetching = true;
 
-      fetchContracts()
+      fetchInspectors()
           .then(response => {
-            this.contractsList = response.data;
+            this.inspectorsList = response.data;
           })
           .catch(err => {
-            this.$store.commit('alert/ERROR', 'Ошибка получения списка договоров');
-            console.log('Ошибка получения списка договоров', err);
+            this.$store.commit('alert/ERROR', 'Ошибка получения списка инспекторов');
+            console.log('Ошибка получения списка инспекторов', err);
           })
           .finally(() => {
             this.fetching = false;

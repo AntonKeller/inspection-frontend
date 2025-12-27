@@ -74,7 +74,7 @@
 </template>
 
 <script>
-import {fetchContacts, removeContact} from "../../../utils/api/api_contacts";
+import {fetchContacts, removeContact} from "../utils/api/api_contacts.js";
 
 export default {
   name: "contacts",

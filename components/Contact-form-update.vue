@@ -59,9 +59,9 @@
 </template>
 
 <script>
-import {changeContact} from "../../../utils/api/api_contacts";
-import {isNotEmptyRule} from '@/utils/validators/functions';
-import {inputFieldStyle} from "@/configs/styles";
+import {changeContact} from "../utils/api/api_contacts.js";
+import {isNotEmptyRule} from '@/utils/validators/functions.js';
+import {inputFieldStyle} from "@/configs/styles.js";
 import _ from "lodash";
 
 export default {

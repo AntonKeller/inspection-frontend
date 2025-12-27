@@ -1,16 +1,22 @@
 <template>
   <v-card :loading="sending" :disabled="sending" elevation="6" width="100vw" max-width="800">
-    <v-card-title>
-      <div class="d-flex justify-space-between align-center">
-        <div>Редактирование залогодателя</div>
-        <my-button-close-card @click="$emit('click:close')" class="align-self-start"/>
-      </div>
+    <v-card-title class="d-flex align-center">
+      Создание новый записи залогодатель
+      <v-btn
+          density="comfortable"
+          class="ml-auto"
+          variant="text"
+          size="small"
+          icon=""
+          @click="$emit('click:close')"
+      >
+        <v-icon icon="mdi-close"/>
+        <v-tooltip activator="parent">Закрыть окно</v-tooltip>
+      </v-btn>
     </v-card-title>
-
     <v-card-subtitle>
       Заполните поля (сведения о залогодателе)
     </v-card-subtitle>
-
     <v-card-item>
       <v-form v-model="formIsValid" ref="form" class="d-flex flex-column mt-2">
         <v-row dense>
@@ -56,8 +62,8 @@
     </v-card-item>
     <v-card-actions>
       <my-btn-submit
-          text="Принять"
-          prepend-icon="mdi-pencil-outline"
+          text="Добавить"
+          prepend-icon="mdi-checkbox-multiple-marked-outline"
           :loading="sending"
           @click="send"
       />
@@ -67,23 +73,14 @@
 </template>
 
 <script>
-import {isINN, isNotEmptyRule} from '@/utils/validators/functions';
-import {changePledger} from "../../../utils/api/api_pledgers";
-import {inputFieldStyle} from "@/configs/styles";
-import _ from "lodash";
+import {isINN, isNotEmptyRule} from '@/utils/validators/functions.js';
+import {addPledger} from "../utils/api/api_pledgers.js";
+import {inputFieldStyle} from "@/configs/styles.js";
 
 export default {
-  name: "pledger-change",
+  name: "pledgerAdd",
 
-  emits: ['change:success', 'click:close'],
-
-  props: {
-    _pledger: Object,
-  },
-
-  beforeMount() {
-    this.pledger = _.cloneDeep(this._pledger);
-  },
+  emits: ['add:success', 'click:close'],
 
   data() {
     return {
@@ -119,14 +116,14 @@ export default {
 
       this.sending = true;
 
-      changePledger(this.pledger)
+      addPledger(this.pledger)
           .then(() => {
-            this.$store.commit('alert/SUCCESS', 'Залогодатель успешно изменен');
-            this.$emit('change:success');
+            this.$store.commit('alert/SUCCESS', 'Залогодатель успешно добавлен');
+            this.$emit('add:success');
           })
           .catch((err) => {
             console.log('Ошибка добавления нового залогодателя', err);
-            this.$store.commit('alert/ERROR', 'Ошибка изменения залогодателя!');
+            this.$store.commit('alert/ERROR', 'Ошибка добавления залогодателя!');
           })
           .finally(() => {
             this.sending = false;

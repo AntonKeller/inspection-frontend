@@ -244,7 +244,6 @@ import {itemsPerPage, itemsPerPageOptions} from "@/constants/table-options";
 import useTasksApi from "../../../../composables/use-tasks-api";
 import useTargetAddressesApi from "../../../../composables/use-target-addresses-api";
 import {useStore} from "vuex";
-import {escapeRegExp} from "lodash/escapeRegExp";
 
 
 const vuexStore = useStore();
@@ -272,13 +271,13 @@ const {
 
 onMounted(async () => {
   await handleFetchOneTask(useRoute().params.taskId);
-  await updateTable(task.value._id);
+  await updateTable();
 });
 
 
 const targetAddressesSearchFiltered = computed(() => {
   if (!searchQuery.value) return targetAddresses.value;
-  const searchRegex = new RegExp(escapeRegExp(searchQuery.value), 'i');
+  const searchRegex = new RegExp(searchQuery.value, 'i');
   return targetAddresses.value.filter((e) => {
     const pledger = e.pledger
         ? `${e.pledger.firstName} ${e.pledger.surname} ${e.pledger.lastName} ${e.pledger.inn}`.trim()
@@ -319,9 +318,9 @@ function handleFetchOneTask(id) {
       });
 }
 
-function updateTable(taskId) {
-  if (!taskId) return;
-  return fetchAllTargetAddressesByTask(taskId)
+function updateTable() {
+  if (!task.value._id) return;
+  return fetchAllTargetAddressesByTask(task.value._id)
       .then(resp => {
         targetAddresses.value = resp.data || [];
       })
@@ -336,7 +335,7 @@ function updateTable(taskId) {
 }
 
 function navigateBack() {
-  navigateTo(`/manager/tasks`);
+  navigateTo(`/manager/tasks/`);
 }
 
 function handleCreateAddress() {

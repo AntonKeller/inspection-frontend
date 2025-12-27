@@ -216,7 +216,7 @@ import useTasksApi from "@/composables/use-tasks-api";
 import {useStore} from "vuex";
 import taskTableHeaders from "@/constants/task-table-headers";
 import {itemsPerPage, itemsPerPageOptions} from "@/constants/table-options";
-import {escapeRegExp} from "lodash/escapeRegExp";
+import escapeRegExp from "lodash/escapeRegExp";
 
 
 const {

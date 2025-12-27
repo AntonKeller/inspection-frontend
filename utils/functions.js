@@ -1,18 +1,5 @@
 import moment from "moment/min/moment-with-locales";
 
-// import 'moment/dist/locale/ru'; // "moment/locale/ru.js";
-
-export function slicer(str, len) {
-    return str?.length > len ? str?.slice(0, len - 3) + '...' : str;
-}
-
-const configDefault = {
-    weekday: 'short', // weekday: 'short',
-    year: 'numeric',
-    month: 'short', // month: 'short',
-    day: 'numeric',
-}
-
 // Короткая дата из Unix date
 export function unixDateToShortDateString(unixDate) {
     return unixDate ? moment(parseInt(unixDate)).locale('ru').format('DD.MM.YYYY') : '-';

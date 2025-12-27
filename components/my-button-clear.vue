@@ -3,7 +3,9 @@
       v-bind="$attrs"
       variant="text"
       color="blue-darken-4"
-      prepend-icon="mdi-backspace-outline"
+      class="text-body-2"
+      rounded="lg"
+      prepend-icon="mdi-close"
   />
 </template>
 

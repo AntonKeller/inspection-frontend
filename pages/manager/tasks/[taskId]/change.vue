@@ -31,22 +31,16 @@
                 />
               </v-col>
               <v-col :cols="12">
-                <my-autocomplete-customers v-model="task.customer"/>
+                <Customer-autocomplete v-model="task.customer" :showBtn="true"/>
               </v-col>
               <v-col :cols="12">
-                <my-autocomplete-contracts v-model="task.contract"/>
+                <Agreement-autocomplete v-model="task.agreement" :showBtn="true"/>
               </v-col>
               <v-col :cols="12">
-                <my-autocomplete-subContracts
-                    v-model="task.subContract"
-                    :parentID="task.contract?._id || null"
-                />
+                <LoanAgreement-autocomplete v-model="task.loanAgreements" :showBtn="true"/>
               </v-col>
               <v-col :cols="12">
-                <my-autocomplete-loanAgreements v-model="task.loanAgreements"/>
-              </v-col>
-              <v-col :cols="12">
-                <my-autocomplete-pledgeAgreements v-model="task.pledgeAgreements"/>
+                <PledgeAgreement-autocomplete v-model="task.pledgeAgreements" :showBtn="true"/>
               </v-col>
             </v-row>
           </v-form>
@@ -54,8 +48,8 @@
 
         <v-card-actions>
           <my-btn-submit
-              text="Принять"
-              prepend-icon="mdi-checkbox-multiple-marked-outline"
+              text="Создать новое задание"
+              prepend-icon="mdi-plus-circle-multiple-outline"
               @click="handleUpdateTask"
           />
           <my-button-clear text="Очистить" @click="clearFields"/>
@@ -78,11 +72,21 @@ const task = ref({});
 const formIsValid = ref(false);
 const form = ref();
 const loading = ref(false);
-
+const updates = ref({});
 
 onMounted(() => {
   handleFetchTask();
 })
+
+watch(task, (v) => {
+  console.log('pledgeAgreements:', v.pledgeAgreements);
+  if (v.title) updates.value.title = v.title;
+  if (v.customer) updates.value.customerId = v.customer._id;
+  if (v.agreement) updates.value.agreementId = v.agreement._id;
+  if (v.loanAgreements) updates.value.loanAgreementsIds = v.loanAgreements.map(e => e._id);
+  if (v.pledgeAgreements) updates.value.pledgeAgreementsIds = v?.pledgeAgreements?.map(e => e._id);
+
+}, {deep: true});
 
 
 async function handleUpdateTask() {
@@ -98,30 +102,19 @@ async function handleUpdateTask() {
   }
 
   loading.value = true;
-
-  return updateTask(id, task.value)
-      .then(() => {
-        vuexStore.commit('alert/SUCCESS', 'Документ успешно отредактирован');
-        navigateBack();
-      })
-      .catch(e => {
-        console.log('Ошибка редактирования', e);
-        vuexStore.commit('alert/ERROR', 'Ошибка редактирования');
-      })
-      .finally(() => loading.value = false)
+  return updateTask(id, updates.value)
+      .then((r) => successHandler(r, 'Документ успешно отредактирован', navigateBack))
+      .catch(e => errorHandler(e, 'Ошибка редактирования'))
+      .finally(finallyHandler)
 }
 
 function handleFetchTask() {
+  loading.value = true;
   if (!useRoute().params.taskId) return;
   return fetchOneTask(useRoute().params.taskId)
-      .then(resp => {
-        task.value = resp.data || {};
-      })
-      .catch(e => {
-        console.log('Ошибка получения данных', e);
-        vuexStore.commit('alert/SUCCESS', 'Задание не существует или было удално');
-        navigateBack();
-      })
+      .then(r => successHandler(r, null, () => task.value = r.data || {}))
+      .catch(e => errorHandler(e, 'Задание не существует или было удалено', navigateBack))
+      .finally(finallyHandler)
 }
 
 function navigateBack() {
@@ -133,9 +126,26 @@ function clearFields() {
     ...task.value,
     title: null,
     customer: null, // Заказчик
-    contract: null, // Договор
+    agreement: null, // Договор
     loanAgreements: null, // Кредитный договор
     pledgeAgreements: null, // Договор залога
   }
+}
+
+
+function successHandler(r, msg, call) {
+  if (msg) vuexStore.commit('alert/SUCCESS', msg);
+  if (call) call();
+  return r;
+}
+
+function errorHandler(e, msg, call) {
+  console.log('Ошибка удаления записей', e);
+  vuexStore.commit('alert/ERROR', msg || e.response?.data?.message || 'Неизвестная ошибка');
+  if (call) call();
+}
+
+function finallyHandler() {
+  loading.value = false;
 }
 </script>

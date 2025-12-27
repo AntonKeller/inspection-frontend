@@ -72,7 +72,7 @@
 </template>
 
 <script>
-import {fetchPledgers, removePledger} from "../../../utils/api/api_pledgers";
+import {fetchPledgers, removePledger} from "../utils/api/api_pledgers.js";
 
 export default {
   name: "pledgers",

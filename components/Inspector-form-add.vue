@@ -94,9 +94,9 @@
 </template>
 
 <script>
-import {navigateBackBtnStyle, inputFieldStyle} from "@/configs/styles";
-import {addInspector} from "../../utils/api/api_inspectors";
-import {isNotEmptyRule} from '@/utils/validators/functions';
+import {navigateBackBtnStyle, inputFieldStyle} from "@/configs/styles.js";
+import {addInspector} from "../utils/api/api_inspectors.js";
+import {isNotEmptyRule} from '@/utils/validators/functions.js';
 import {vMaska} from "maska/vue"
 
 export default {

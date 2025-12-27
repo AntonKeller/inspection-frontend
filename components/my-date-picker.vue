@@ -1,40 +1,40 @@
 <template>
-  <div class="d-flex ga-1" style="width: 100%">
+  <div class="d-flex ga-1">
     <v-text-field
         v-model="textField"
-        :rules="[v => textDateValid(v)]"
-        ref="dateInput"
-        @input="onInput"
-        prepend-inner-icon="mdi-calendar-range"
-        label="Дата регистрации"
         placeholder="дд:мм:гггг"
-        color="yellow-darken-3"
-        variant="outlined"
-        density="compact"
-        v-bind="$attrs"
-    />
-    <v-btn
-        class="border-sm border-dashed"
-        variant="outlined"
-        icon="mdi-calendar"
-        rounded="lg"
-        size="small"
+        variant="solo-filled"
+        ref="dateInput"
+        label="Дата"
+        flat
+        clearable
+        :rules="[v => textDateValid(v)]"
+        @input="onInput"
+        v-bind="{...inputFieldStyle, ...$attrs}"
     >
-      <v-icon/>
-      <v-tooltip activator="parent" location="left">
-        Открыть календарь
-      </v-tooltip>
-      <v-menu v-model="isVisibleMenu" activator="parent" location="bottom" transition="slide-x-transition">
-        <v-locale-provider locale="ru">
-          <v-date-picker
-              v-model="datepickerValue"
-              @update:modelValue="datePickerUpdateValue"
-              title="Дата регистрации"
-              hide-header
-              @click.stop
-              border
-          />
-        </v-locale-provider>
+    </v-text-field>
+    <v-btn
+        border="dashed"
+        class="border"
+        icon=""
+        size="small"
+        color="grey-darken-2"
+        variant="text"
+        rounded="lg"
+        @click.stop="isVisibleMenu=true"
+    >
+      <v-icon icon="mdi-calendar-range"/>
+      <v-tooltip activator="parent" location="right" text="Календарь"/>
+      <v-menu v-if="isVisibleMenu" v-model="isVisibleMenu" activator="parent" location="bottom right">
+        <v-date-picker
+            v-model="datepickerValue"
+            @update:modelValue="datePickerUpdateValue"
+            title="Дата"
+            hide-header
+            @click.stop
+            class="rounded-lg mt-1"
+            border
+        />
       </v-menu>
     </v-btn>
   </div>
@@ -42,12 +42,15 @@
 
 <script>
 import moment from 'moment';
+import {inputFieldStyle} from "@/configs/styles";
 
 export default {
   inheritAttrs: false,
 
   name: "my-date-picker",
+
   props: ['modelValue', 'fieldWidth'],
+
   emits: ['update:modelValue'],
 
   data() {
@@ -56,34 +59,36 @@ export default {
       textFieldValue: null,
       datepickerValue: null,
       isVisibleMenu: false,
-    }
-  },
-
-  beforeMount() {
-    if (!this.modelValue) {
-      this.unixDate = null;
-      this.textFieldValue = null;
-      this.datepickerValue = null;
-    } else if (!isNaN(parseInt(this.modelValue))) {
-      this.textFieldValue = moment(this.modelValue).format('DD.MM.YYYY');
-      this.unixDate = this.modelValue;
+      inputFieldStyle
     }
   },
 
   watch: {
     modelValue() {
-      if (!this.modelValue) {
+      if (this.modelValue === null || this.modelValue === undefined) {
+        this.datepickerValue = null;
         this.unixDate = null;
         this.textFieldValue = null;
-        this.datepickerValue = null;
       } else if (!isNaN(parseInt(this.modelValue))) {
-        this.textFieldValue = moment(this.modelValue).format('DD.MM.YYYY');
+        this.textFieldValue = moment(parseInt(this.modelValue)).format('DD.MM.YYYY');
         this.unixDate = this.modelValue;
       }
     },
     unixDate(value) {
       this.$emit('update:modelValue', value);
     },
+    textFieldValue(value) {
+      if (value === null) {
+        this.unixDate = null;
+      }
+    }
+  },
+
+  beforeMount() {
+    if (!isNaN(parseInt(this.modelValue))) {
+      this.textFieldValue = moment(parseInt(this.modelValue)).format('DD.MM.YYYY');
+      this.unixDate = this.modelValue;
+    }
   },
 
   computed: {
@@ -121,6 +126,12 @@ export default {
 
   methods: {
 
+    setDateNow() {
+      const now = new Date(); // Текущая дата и время
+      now.setHours(0, 0, 0, 0); // Устанавливаем время на 00:00:00
+      this.unixDate = now.getTime(); // Получаем timestamp на 00:00
+    },
+
     datePickerUpdateValue(value) {
       this.textFieldValue = moment(value).format('DD.MM.YYYY');
       this.unixDate = moment(value).unix() * 1000;
@@ -134,7 +145,7 @@ export default {
 
     // Валидация текстовой даты (Text filed) -> возвращает сообщение об ошибке
     textDateValid(textDate) {
-      return this.momentCheckDate(textDate) || 'Некорректная дата';
+      return !textDate || this.momentCheckDate(textDate) || 'Некорректная дата';
     },
 
     // Ограничивает ввод
@@ -154,7 +165,7 @@ export default {
       ];
 
       const textDate = this.textField;
-      const foundIndexLastValid = rules.reverse().findIndex(exp => exp.test(textDate))
+      const foundIndexLastValid = rules.reverse().findIndex(exp => exp.test(textDate));
 
       if (foundIndexLastValid !== undefined) {
         const slice = textDate.match(rules[foundIndexLastValid])?.shift();

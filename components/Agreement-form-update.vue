@@ -1,18 +1,10 @@
 <template>
   <v-card :sending="sending" :disabled="sending" elevation="6" width="100vw" max-width="800">
-    <v-card-title class="d-flex align-center">
-      {{ cardTitle }}
-      <v-btn
-          density="comfortable"
-          class="ml-auto"
-          variant="text"
-          size="small"
-          icon=""
-          @click="$emit('click:close')"
-      >
-        <v-icon icon="mdi-close"/>
-        <v-tooltip activator="parent">Закрыть окно</v-tooltip>
-      </v-btn>
+    <v-card-title>
+      <div class="d-flex justify-space-between align-center">
+        <div>{{ cardTitle }}</div>
+        <my-button-close-card @click="$emit('click:close')" class="align-self-start"/>
+      </div>
     </v-card-title>
 
     <v-card-subtitle>
@@ -28,7 +20,7 @@
                 v-bind="inputFieldStyle"
                 prepend-inner-icon="mdi-file-sign"
                 :label="placeHolderContract"
-                placeholder="Номер договора"
+                placeholder="xxxxxx/xxxxx xxxx.xxxxx"
             />
           </v-col>
 
@@ -48,12 +40,17 @@
                 label="Рамочный договор"
                 color="primary"
                 class="pl-4"
+                disabled
             />
           </v-col>
 
           <v-col :cols="12" v-if="!hideParent">
             <Transition>
-              <myAutocompleteContracts v-model="contract.parent" label="Рамочный договор" hideButtonAdd/>
+              <Agreement-autocomplete
+                  v-model="contract.parent"
+                  label="Рамочный договор"
+                  hideButtonAdd
+              />
             </Transition>
           </v-col>
 
@@ -72,18 +69,29 @@
     </v-card-text>
 
     <v-card-actions>
-      <my-btn-submit text="Добавить" :sending="sending" @click="send"/>
+      <my-btn-submit text="Принять" :sending="sending" @click="send"/>
       <my-button-clear text="Очистить" @click="clear"/>
     </v-card-actions>
   </v-card>
 </template>
 
 <script>
-import {addContract} from "../../../utils/api/api_contracts";
-import {inputFieldStyle} from "@/configs/styles";
+import {changeContract} from "../utils/api/api_contracts.js";
+import {inputFieldStyle} from "@/configs/styles.js";
+import _ from "lodash";
 
 export default {
-  name: "contract-add",
+  name: "contractChange",
+
+  emits: ['change:success', 'click:close'],
+
+  props: {
+    _contract: Object,
+  },
+
+  beforeMount() {
+    this.contract = _.cloneDeep(this._contract);
+  },
 
   data() {
     return {
@@ -107,7 +115,7 @@ export default {
   computed: {
 
     cardTitle() {
-      return this.hideParent ? 'Новый рамочный договор' : 'Новое ТЗ к договору';
+      return this.hideParent ? 'Редактирование рамочного договора' : 'Редактирование ТЗ к договору';
     },
 
     placeHolderContract() {
@@ -117,7 +125,6 @@ export default {
   },
 
   methods: {
-
     async send() {
 
       await this.$refs.form.validate();
@@ -129,13 +136,13 @@ export default {
 
       this.sending = true;
 
-      addContract(this.contract)
+      changeContract(this.contract)
           .then(() => {
-            this.$store.commit('alert/SUCCESS', 'Договор успешно добавлен!');
-            this.$emit('add:success');
+            this.$store.commit('alert/SUCCESS', 'Договор успешно изменен!');
+            this.$emit('change:success');
           })
           .catch(err => {
-            this.$store.commit('alert/ERROR', 'Ошибка добавления договора!');
+            this.$store.commit('alert/ERROR', 'Ошибка изменения договора!');
             console.log('Ошибка добавления договора', err);
           })
           .finally(() => {

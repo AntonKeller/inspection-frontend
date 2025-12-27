@@ -25,21 +25,23 @@ export const mySearchFieldStyle = {
 // Стили для кнопки навигации "Назад"
 export const navigateBackBtnStyle = {
     ['prepend-icon']: "mdi-arrow-left",
-    color: "black",
+    color: "deep-orange",
     density: 'comfortable',
     size: 'small',
-    border: false,
-    variant: "outlined",
+    class: 'border-sm',
+    border: 'dashed',
+    variant: "tonal",
     rounded: "md"
 }
 
 // Стили для поля ввода на формах
 export const inputFieldStyle = {
-    ['color']: "yellow-darken-3",
-    ['variant']: "outlined",
-    ['density']: "compact",
-    ['label']: "Заголовок задания",
-    ['clearable']: true
+    color: "yellow-darken-3",
+    variant: "outlined",
+    density: "compact",
+    label: "Заголовок задания",
+    clearable: true,
+    rounded: 'lg'
 }
 
 export const myTableSheetStyle = {

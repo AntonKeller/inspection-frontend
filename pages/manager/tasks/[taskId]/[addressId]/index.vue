@@ -330,7 +330,7 @@ import {useStore} from "vuex";
 import useTargetObjectsApi from "../../../../../composables/use-target-objects-api";
 import useTargetAddressesApi from "../../../../../composables/use-target-addresses-api";
 import useTemplatesApi from "../../../../../composables/use-templates-api";
-import {escapeRegExp} from "lodash/escapeRegExp";
+import escapeRegExp from "lodash/escapeRegExp";
 import {navigateTo} from "nuxt/app";
 
 
@@ -466,7 +466,7 @@ function handleDownloadReport() {
 }
 
 function navigateBack() {
-  return navigateTo(`/manager/tasks/${useRoute().params.taskId}`);
+  return navigateTo(`/manager/tasks/${useRoute().params.taskId}/`);
 }
 
 function handleRemoveObject(id) {
