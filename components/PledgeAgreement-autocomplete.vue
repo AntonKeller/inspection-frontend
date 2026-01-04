@@ -7,7 +7,7 @@
         prepend-inner-icon="mdi-file-sign"
         label="Список договоров залога"
         no-data-text="нет данных"
-        color="yellow-darken-3"
+        color="yellow-darken-4"
         density="compact"
         variant="outlined"
         rounded="lg"

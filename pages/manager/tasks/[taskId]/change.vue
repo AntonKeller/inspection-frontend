@@ -48,8 +48,8 @@
 
         <v-card-actions>
           <my-btn-submit
-              text="Создать новое задание"
-              prepend-icon="mdi-plus-circle-multiple-outline"
+              text="Принять изменения"
+              prepend-icon="mdi-content-save-edit-outline"
               @click="handleUpdateTask"
           />
           <my-button-clear text="Очистить" @click="clearFields"/>

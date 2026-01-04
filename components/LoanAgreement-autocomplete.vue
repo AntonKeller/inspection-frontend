@@ -5,8 +5,9 @@
         :items="itemsFiltered"
         @update:menu="updateMenuHandler"
         prepend-inner-icon="mdi-file-sign"
+
         no-data-text="нет данных"
-        color="yellow-darken-3"
+        color="yellow-darken-4"
         density="compact"
         variant="outlined"
         label="Список кредитных договоров"
@@ -125,8 +126,8 @@ function closeMenu() {
 }
 
 function createSuccessHandler() {
-  updateItems();
   menuIsOpen.value = false;
+  return updateItems();
 }
 
 function updateMenuHandler(status) {

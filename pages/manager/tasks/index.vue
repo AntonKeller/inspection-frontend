@@ -89,7 +89,7 @@
           <div class="mx-1"></div>
 
           <v-btn
-              :loading="fetching"
+              :loading="loading"
               prepend-icon="mdi-update"
               variant="text"
               size="small"
@@ -121,45 +121,9 @@
       <v-data-table
           v-model="selected"
           v-model:items-per-page="itemsPerPage"
-          :items-per-page-options="itemsPerPageOptions"
-          :items-per-page="itemsPerPage"
-          :items="tasksSearchFilter"
-          :search="searchQuery"
-          :headers="taskTableHeaders"
-          style="max-height: 500px"
-          items-per-page-text="Кол-во на странице"
-          loading-text="Загрузка данных..."
-          no-data-text="Нет данных"
-          class="bg-transparent"
-          density="comfortable"
-          items-per-page="5"
-          item-value="_id"
-          fixed-header
-          show-select
-          @update:current-items="selected = []"
+          v-model:page="page"
+          v-bind="{...commonTableConfig, headers, items: tasksFiltered, loading}"
       >
-        <!--        <template #item.title="{ item }">-->
-        <!--          <v-icon-->
-        <!--              icon="mdi-label-multiple-outline"-->
-        <!--              size="small"-->
-        <!--              color="grey-darken-1"-->
-        <!--              class="mr-1"-->
-        <!--          />-->
-        <!--          {{ item?.title ?? '-' }}-->
-        <!--        </template>-->
-
-        <!--        <template #item.customerShortName="{ item }">-->
-        <!--          <v-chip-->
-        <!--              :prepend-icon="item?.customer?.shortName ? 'mdi-domain' : ''"-->
-        <!--              :text="item.customerShortName"-->
-        <!--              color="blue-darken-4"-->
-        <!--              class="text-caption"-->
-        <!--              density="compact"-->
-        <!--              size="small"-->
-        <!--              label-->
-        <!--          />-->
-        <!--        </template>-->
-
         <!--        <template #item.assignmentContract="{ item }">-->
         <!--          <v-chip-->
         <!--              :prepend-icon="item?.contract ? 'mdi-domain' : ''"-->
@@ -210,13 +174,12 @@
 
 <script setup>
 import {mySearchFieldStyle} from "@/configs/styles";
-import {unixDateToShortDateString} from "@/utils/functions";
 import {navigateTo} from "nuxt/app";
 import useTasksApi from "@/composables/use-tasks-api";
 import {useStore} from "vuex";
-import taskTableHeaders from "@/constants/task-table-headers";
-import {itemsPerPage, itemsPerPageOptions} from "@/constants/table-options";
+import {taskTableHeaders as headers} from "@/constants/task-table-headers";
 import escapeRegExp from "lodash/escapeRegExp";
+import {commonTableConfig} from "@/configs/common-table-config.js";
 
 
 const {
@@ -230,9 +193,18 @@ const {
 const vuexStore = useStore();
 const tasks = ref([]);
 const selected = ref([]);
-const fetching = ref(false);
+const loading = ref(false);
 const searchQuery = ref('');
 const searching = ref(false);
+const emptyTask = {
+  title: null,                // Заголовок задачи
+  customerId: null,           // Заказчик
+  agreementId: null,          // Договор
+  loanAgreementsIds: null,    // Кредитный договор
+  pledgeAgreementsIds: null,  // Договор залога
+}
+const itemsPerPage = ref(10);
+const page = ref(1);
 
 
 onMounted(() => {
@@ -240,98 +212,68 @@ onMounted(() => {
 });
 
 
-const tasksSearchFilter = computed(() => {
-  if (!searchQuery.value) return tasks.value;
-  const searchRegex = new RegExp(escapeRegExp(searchQuery.value), 'i');
-  return tasks.value.filter(item => {
-    const row = [
-      item?.title,
-      item?.description,
-      item?.contract?.customer?.fullName,
-      item?.contract?.customer?.inn
-    ].filter(e => !!e).join(' ');
-    return searchRegex.test(row);
+const tasksFiltered = computed(() => searchFilter(tasks.value, searchQuery.value));
+
+
+function searchFilter(items, search) {
+  if (!search) return items;
+  const regex = new RegExp(escapeRegExp(search), 'i');
+  return items.value.filter(e => {
+    const join = [
+      e?.title || '',
+      e?.description || '',
+      e?.customer?.fullName || '',
+      e?.customer?.inn || '',
+      e?.customer?.email || '',
+      e?.customer?.memberFullName || '',
+      e?.agreement?.description || '',
+      e?.agreement?.number || ''
+    ].join(' ');
+    return regex.test(join);
   })
-});
-
-
-function updateTable() {
-  fetching.value = true;
-  fetchAllTasks()
-      .then(resp => {
-        tasks.value = resp.data || [];
-        console.log(resp.data)
-        console.log(tasks.value)
-      })
-      .catch(e => {
-        vuexStore.commit('alert/ERROR', 'Ошибка запроса данных');
-      })
-      .finally(() => {
-        fetching.value = false;
-      });
 }
 
-function getContractString(contract) {
-  const a = contract?.number;
-  const b = contract?.date;
-  if (!a && !b) return '-';
-  if (a && !b) return `№ ${contract?.number} от [дата отсутствует]`;
-  if (!a && b) return `[№ отсутствует] от ${unixDateToShortDateString(contract?.date)}`;
-  if (a && b) return `№ ${contract?.number} от ${unixDateToShortDateString(contract?.date)}`;
+function updateTable() {
+  loading.value = true;
+  return fetchAllTasks()
+      .then(r => successHandler(r, null, () => tasks.value = r.data || []))
+      .catch(e => errorHandler(e, 'Ошибка запроса данных'))
+      .finally(finallyHandler);
 }
 
 function handleCreateTask() {
-  const task = {
-    title: null,                // Заголовок задачи
-    customerId: null,           // Заказчик
-    agreementId: null,          // Договор
-    loanAgreementsIds: null,    // Кредитный договор
-    pledgeAgreementsIds: null,  // Договор залога
-  }
-  createTask(task)
-      .then(resp => {
-        vuexStore.commit('alert/SUCCESS', 'Задание добавлено');
-        updateTable();
-      })
-      .catch(e => {
-        vuexStore.commit('alert/ERROR', 'Ошибка добавления');
-      })
-      .finally(() => {
-        selected.value = [];
-      });
+  return createTask(emptyTask)
+      .then(r => successHandler(r, 'Документ создан', updateTable))
+      .catch(e => errorHandler(e, 'Ошибка создания документа'));
 }
 
 function handleRemoveOneTask(id) {
   return removeOneTask(id)
-      .then(resp => {
-        vuexStore.commit('alert/SUCCESS', 'Запись удалена');
-        updateTable();
-        return resp;
-      })
-      .catch(e => {
-        vuexStore.commit('alert/ERROR', 'Ошибка удаления');
-        return [];
-      })
-      .finally(() => {
-        selected.value = [];
-      });
+      .then(r => successHandler(r, 'Документ удален', updateTable))
+      .catch(e => errorHandler(e, 'Ошибка удаления'));
 }
 
 function handleRemoveManyTasks() {
   if (!selected.value || selected.value.length === 0) return;
   return removeManyTasks(selected.value)
-      .then(resp => {
-        vuexStore.commit('alert/SUCCESS', 'Записи удалены');
-        updateTable();
-        return resp;
-      })
-      .catch(e => {
-        console.log('Ошибка удаления', e);
-        vuexStore.commit('alert/ERROR', 'Ошибка удаления');
-        return [];
-      })
-      .finally(() => {
-        selected.value = [];
-      });
+      .then(r => successHandler(r, 'Документы удалены', updateTable))
+      .catch(e => errorHandler(e, 'Ошибка удаления'));
+}
+
+
+function successHandler(r, msg, callback) {
+  if (msg) vuexStore.commit('alert/SUCCESS', msg);
+  if (callback) callback();
+  return r;
+}
+
+function errorHandler(e, msg) {
+  console.log('Ошибка', e);
+  vuexStore.commit('alert/ERROR', msg || e.response?.data?.message || 'Неизвестная ошибка');
+}
+
+function finallyHandler() {
+  loading.value = false;
+  selected.value = [];
 }
 </script>

@@ -1,4 +1,4 @@
-const targetAddressesTableHeaders = [
+export const targetAddressesTableHeaders = [
     {
         title: '',
         key: 'actions',
@@ -47,5 +47,3 @@ const targetAddressesTableHeaders = [
         _$visible: true,
     },
 ]
-
-export default targetAddressesTableHeaders;

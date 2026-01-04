@@ -7,7 +7,7 @@
         @update:menu="onUpdateMenuPledgers"
         prepend-inner-icon="mdi-file-document-edit"
         no-data-text="нет данных"
-        color="yellow-darken-3"
+        color="yellow-darken-4"
         variant="outlined"
         density="compact"
         label="Залогодатель"

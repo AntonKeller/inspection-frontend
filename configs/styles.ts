@@ -1,16 +1,3 @@
-export const myStyles = {
-    buttonColor: 'cyan-darken-3',
-    color: 'blue-darken-2',
-}
-
-export const myBtnPlus = {
-    ['prepend-icon']: "mdi-plus-box-multiple-outline",
-    ['color']: "blue-darken-4",
-    ['variant']: "text",
-    ['border']: "sm",
-    ['rounded']: "lg"
-}
-
 export const mySearchFieldStyle = {
     ['prepend-inner-icon']: "mdi-magnify",
     ['variant']: "solo-filled",
@@ -25,13 +12,9 @@ export const mySearchFieldStyle = {
 // Стили для кнопки навигации "Назад"
 export const navigateBackBtnStyle = {
     ['prepend-icon']: "mdi-arrow-left",
-    color: "deep-orange",
-    density: 'comfortable',
     size: 'small',
-    class: 'border-sm',
-    border: 'dashed',
-    variant: "tonal",
-    rounded: "md"
+    color: 'blue-darken-1',
+    rounded: "lg"
 }
 
 // Стили для поля ввода на формах

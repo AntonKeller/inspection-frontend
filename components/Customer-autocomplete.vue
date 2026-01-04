@@ -6,7 +6,7 @@
         @update:menu="updateMenu"
         prepend-inner-icon="mdi-account-tie"
         no-data-text="нет данных"
-        color="yellow-darken-3"
+        color="yellow-darken-4"
         variant="outlined"
         density="compact"
         label="Заказчик"
@@ -102,10 +102,7 @@ const loading = ref(false);
 const formIsOpen = ref(false);
 const loadingItem = ref({});
 const search = ref('');
-const {
-  fetchAll: fetchAllItems,
-  removeOne: removeOneItem
-} = useCustomersApi();
+const {fetchAll: fetchAllItems, removeOne: removeOneItem} = useCustomersApi();
 
 
 function title(item) {

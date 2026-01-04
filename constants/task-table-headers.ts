@@ -1,6 +1,6 @@
 import type {TaskResponseDTO} from "@/DTO/Task-dto";
 
-const taskTableHeaders = [
+export const taskTableHeaders = [
     {
         title: '',
         key: 'actions',
@@ -42,5 +42,3 @@ const taskTableHeaders = [
         _$visible: true,
     },
 ];
-
-export default taskTableHeaders;

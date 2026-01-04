@@ -1,4 +1,13 @@
 <template>
+  <v-sheet
+      class="bg-grey-lighten-4 rounded-lg pa-1 mx-4 elevation-12"
+      width="100vw"
+      max-width="1024"
+  >
+    <!--    TODO: Закончить форму добавления сотрудника -->
+  </v-sheet>
+
+
   <v-container fluid>
     <v-sheet>
       <v-card :loading="sending" :disabled="sending" elevation="0" width="100vw" max-width="800">
